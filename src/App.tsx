@@ -1,12 +1,12 @@
 import React from 'react';
-import { HashRouter, Route, Switch } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Route, Switch } from 'react-router-dom';
 import './App.scss';
 import Header from './components/header';
 import ConnectPage from './containers/connect-page';
 
 function App() {
   return (
-    <HashRouter basename={process.env.PUBLIC_URL}>
+    <BrowserRouter >
       <div className='App'>
         <Header></Header>
         <Switch>
@@ -15,7 +15,7 @@ function App() {
           </Route>
         </Switch>
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 
