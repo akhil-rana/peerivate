@@ -24,7 +24,9 @@
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build && cp CNAME build/CNAME",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -48,7 +50,9 @@
     "@tailwindcss/postcss7-compat": "^2.1.0",
     "@types/react-router-dom": "^5.1.7",
     "autoprefixer": "^9.8.6",
+    "ghpages": "^0.0.10",
     "postcss": "^7.0.35",
+    "q-io": "^1.13.2",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.1.0"
   }
 }
