@@ -18,9 +18,10 @@ jobs:
     - name: Install Packages
       run: npm install
     - name: Deploy to GH Pages
+      run: |
         git config --global user.email "akhilrana0001@gmail.com"
         git config --global user.name "akhil-rana"
         git remote set-url origin https://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@github.com/akhil-rana/peerivate.git
-      run: npm run deploy
+        npm run deploy
     - name: Updating Domain
       run: echo "Update domain"
