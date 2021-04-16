@@ -20,7 +20,7 @@ jobs:
     - name: Deploy to GH Pages
         git config --global user.email "akhilrana0001@gmail.com"
         git config --global user.name "akhil-rana"
-        git remote set-url origin https://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@github.com/akhil-rana/peerivate.git
+        git remote set-url origin https://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@github.com/akhil-rana/peerivate.git
       run: npm run deploy
     - name: Updating Domain
       run: echo "Update domain"
