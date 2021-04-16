@@ -6,16 +6,16 @@ import ConnectPage from './containers/connect-page';
 
 function App() {
   return (
-    <div className='App'>
-      <Header></Header>
-      <HashRouter>
+    <HashRouter basename={process.env.PUBLIC_URL}>
+      <div className='App'>
+        <Header></Header>
         <Switch>
           <Route path='/connect'>
             <ConnectPage />
           </Route>
         </Switch>
-      </HashRouter>
-    </div>
+      </div>
+    </HashRouter>
   );
 }
 
