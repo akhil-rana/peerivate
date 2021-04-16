@@ -1,7 +1,7 @@
 import './index.scss';
 
 function ConnectPage(props: any) {
-  return <div></div>;
+  return <div>hhhhh</div>;
 }
 
 export default ConnectPage;
