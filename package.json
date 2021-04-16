@@ -2,7 +2,7 @@
   "name": "peerivate",
   "version": "0.1.0",
   "private": true,
-  "homepage":  "https://akhilrana.com/peerivate/",
+  "homepage":  "https://peerivate.akhilrana.com/",
   "dependencies": {
     "@craco/craco": "^6.1.1",
     "@testing-library/jest-dom": "^5.11.10",
@@ -26,7 +26,7 @@
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
-    "predeploy": "npm run build",
+    "predeploy": "npm run build && cp CNAME build/CNAME",
     "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
