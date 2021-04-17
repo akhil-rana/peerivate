@@ -1,5 +1,5 @@
-import { animate, useMotionValue } from 'framer-motion';
-import { useEffect, useState } from 'react';
+// import { animate, useMotionValue } from 'framer-motion';
+import { useState } from 'react';
 import './index.scss';
 import { CheckCircleIcon } from '@heroicons/react/outline';
 
@@ -10,10 +10,19 @@ function CopyToClipboardBox(props: any) {
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(props.copy);
     setCopied(true);
+    showCopiedUi();
+  }
+
+  function showCopiedUi() {
     let styles = JSON.parse(JSON.stringify(styling || {}));
-    styles.backgroundColor = '#008a006e'
+    styles.backgroundColor = '#008a006e';
+    styles.borderColor = 'green';
     setStyling(styles);
-    console.log(styling);
+    setTimeout(() => {
+      const { backgroundColor, borderColor, ...reverseStyles } = styles;
+      setStyling(reverseStyles);
+      setCopied(false);
+    }, 2000);
   }
 
   return (
@@ -24,9 +33,10 @@ function CopyToClipboardBox(props: any) {
         copyToClipboard(props.copy);
       }}
     >
-      {' '}
       <div className='copyBoxContent'>
-        <span className='m-auto pr-4 pl-4'>{copied ? 'Copied' : props.text}</span>
+        <span className='m-auto pr-4 pl-4'>
+          {copied ? 'Copied' : props.text}
+        </span>
         {copied ? (
           <CheckCircleIcon
             className='copyIcon h-5 w-5 inline-block relative -top-0.5'

@@ -1,5 +1,5 @@
 import './index.scss';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { LoadingOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 

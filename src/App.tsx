@@ -1,4 +1,4 @@
-import React from 'react';
+// import React from 'react';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import './App.scss';
 import Header from './components/header';
@@ -10,7 +10,7 @@ function App() {
       <div className='App'>
         <Header></Header>
         <Switch>
-          <Route path='/connect'>
+          <Route path='/'>
             <ConnectPage />
           </Route>
         </Switch>

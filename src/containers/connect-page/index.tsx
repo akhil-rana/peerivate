@@ -1,17 +1,18 @@
 import './index.scss';
 import Peer from 'peerjs';
 import QRCode from 'qrcode';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Card from '../../components/card';
 import { motion } from 'framer-motion';
-// import { AppstoreAddOutlined } from '@ant-design/icons';
 import { DuplicateIcon, LinkIcon } from '@heroicons/react/outline';
 import CopyToClipboardBox from '../../components/copyToClipboardBox';
+import { callPeer, answerPeer } from '../../services/call';
 
 function ConnectPage(props: any) {
   const [qrCodeLoading, setQrCodeLoading] = useState(true);
   const [qrImageUrl, setQrImageUrl] = useState('');
   const [peerId, setPeerId] = useState('');
+  const [otherPeerID, serOtherPeerID] = useState('');
 
   useEffect(() => {
     const peer = new Peer();
@@ -25,6 +26,17 @@ function ConnectPage(props: any) {
         .catch((err) => {
           console.error(err);
         });
+    });
+    // answerPeer(peer);
+
+    peer.on('connection', (conn) => {
+      conn.on('data', (data) => {
+        // Will print 'hi!'
+        console.log(data);
+      });
+      conn.on('open', () => {
+        conn.send('hello!');
+      });
     });
   }, []);
 
@@ -66,9 +78,39 @@ function ConnectPage(props: any) {
         ></Card>
 
         <Card
-          loading={qrCodeLoading}
-          content={''}
-          heading='Join'
+          loading={false}
+          content={
+            <div className=' relative mt-6 text-center'>
+              <input
+                type='text'
+                id='name-with-label'
+                className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
+                name='meetingId'
+                onChange={(e) => {
+                  serOtherPeerID(e?.target?.value);
+                }}
+                placeholder='Peer ID'
+              />
+
+              <button
+                type='button'
+                onClick={() => {
+                  // callPeer(otherPeerID);
+                  const peer1 = new Peer();
+                  const conn = peer1.connect(otherPeerID);
+                  console.log(conn)
+                  conn.on('open', () => {
+                    console.log('connect to '+otherPeerID)
+                    conn.send('hi!');
+                  });
+                }}
+                className='py-3 px-6 w-40 mt-10 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
+              >
+                Call
+              </button>
+            </div>
+          }
+          heading='Call a Peer'
           animateFrom='100em'
           animateTo='0em'
           style={{
