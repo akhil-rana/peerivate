@@ -7,20 +7,27 @@ import { motion } from 'framer-motion';
 import { DuplicateIcon, LinkIcon } from '@heroicons/react/outline';
 import CopyToClipboardBox from '../../components/copyToClipboardBox';
 import { callPeer, answerPeer } from '../../services/call';
+import { v4 as uuidv4 } from 'uuid';
 
 function ConnectPage(props: any) {
   const [qrCodeLoading, setQrCodeLoading] = useState(true);
   const [qrImageUrl, setQrImageUrl] = useState('');
-  const [peerId, setPeerId] = useState('');
+  const [peerId, setPeerId] = useState(uuidv4());
   const [otherPeerID, serOtherPeerID] = useState('');
-  const [peer, setPeer] = useState(new Peer());
+  const [peer, setPeer] = useState(
+    new Peer(peerId, {
+      config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] },
+    })
+  );
+
+  // var pee1r = new Peer();
 
   useEffect(() => {
-  // const peer = new Peer();
-    console.log('h')
+    // const peer = new Peer();
+    // console.log('h')
     peer.on('open', function (id) {
-      setPeerId(id);
-      QRCode.toDataURL(id)
+      // setPeerId(id);
+      QRCode.toDataURL(peerId)
         .then((url) => {
           setQrImageUrl(url);
           setQrCodeLoading(false);
