@@ -13,9 +13,11 @@ function ConnectPage(props: any) {
   const [qrImageUrl, setQrImageUrl] = useState('');
   const [peerId, setPeerId] = useState('');
   const [otherPeerID, serOtherPeerID] = useState('');
+  const [peer, setPeer] = useState(new Peer());
 
   useEffect(() => {
-    const peer = new Peer();
+  // const peer = new Peer();
+    console.log('h')
     peer.on('open', function (id) {
       setPeerId(id);
       QRCode.toDataURL(id)
@@ -38,7 +40,7 @@ function ConnectPage(props: any) {
         conn.send('hello!');
       });
     });
-  }, []);
+  }, [peer]);
 
   return (
     <div className='connectPageMain'>
@@ -96,11 +98,11 @@ function ConnectPage(props: any) {
                 type='button'
                 onClick={() => {
                   // callPeer(otherPeerID);
-                  const peer1 = new Peer();
-                  const conn = peer1.connect(otherPeerID);
-                  console.log(conn)
+                  // const peer1 = new Peer();
+                  const conn = peer.connect(otherPeerID);
+                  console.log(conn);
                   conn.on('open', () => {
-                    console.log('connect to '+otherPeerID)
+                    console.log('connect to ' + otherPeerID);
                     conn.send('hi!');
                   });
                 }}

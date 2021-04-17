@@ -1,7 +1,8 @@
 import Peer from 'peerjs';
 
-export async function callPeer(peerId: string) {
-  const peer = new Peer();
+// const peer = new Peer();
+
+export async function callPeer(peerId: string, peer: any) {
   //   await (navigator.mediaDevices as any).getDisplayMedia(
   //     { video: true },
   //     (stream: any) => {
