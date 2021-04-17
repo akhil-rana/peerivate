@@ -15,6 +15,9 @@ function Card(props: any) {
       style={props.style}
     >
       <div className='flex flex-col items-center justify-center'>
+      <p className='text-gray-800 text-xl font-medium mb-1'>
+          {props.heading}
+        </p>
         {props.loading ? (
           <div
             style={{
@@ -26,11 +29,9 @@ function Card(props: any) {
             <LoadingOutlined style={{ fontSize: 50 }} spin />
           </div>
         ) : (
-          <div className='upperPortion'>{props.upperPortion}</div>
+          <div className='upperPortion'>{props.content}</div>
         )}
-        <p className='text-gray-800 text-xl font-medium mb-4 mt-4'>
-          {props.heading}
-        </p>
+        
         <p className='text-gray-400 text-center text-xs px-2'></p>
       </div>
     </motion.div>

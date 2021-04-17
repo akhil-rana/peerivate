@@ -1,0 +1,12 @@
+.copyBox:hover {
+    background-color: #76ddbb9a;
+    // transform: scale(1, -1);
+}
+
+// .copyBox:hover .copyBoxContent{
+//     transform: rotateX(360deg) !important;
+
+// }
+.copyBox {
+    transition: 0.2s ease-in-out;
+}
