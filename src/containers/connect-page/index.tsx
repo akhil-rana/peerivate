@@ -2,8 +2,8 @@ import './index.scss';
 import Peer from 'peerjs';
 import QRCode from 'qrcode';
 import React, { useEffect, useState } from 'react';
-// import { useSpring, animated } from 'react-spring';
 import Card from '../../components/card';
+import { motion } from 'framer-motion';
 
 function ConnectPage(props: any) {
   const [qrCodeLoading, setQrCodeLoading] = useState(true);
@@ -26,14 +26,36 @@ function ConnectPage(props: any) {
   }, []);
 
   return (
-    <div>
-      <div className='connectPageMain'>
-        <Card
-          loading={qrCodeLoading}
-          upperPortion={<img alt='qrcode' src={qrImageUrl}></img>}
-          heading='Invite others'
-        ></Card>
-      </div>
+    <div className='connectPageMain flex'>
+      <Card
+        loading={qrCodeLoading}
+        upperPortion={
+          <motion.img
+            animate={{ scale: 1 }}
+            initial={{ scale: 0.5 }}
+            transition={{ duration: 0.2 }}
+            alt='qr code'
+            src={qrImageUrl}
+          ></motion.img>
+        }
+        heading='Invite others'
+        animateFrom='-100em'
+        animateTo='0em'
+        style={{
+          height: '17em',
+        }}
+      ></Card>
+
+      <Card
+        loading={qrCodeLoading}
+        upperPortion={''}
+        heading='Join'
+        animateFrom='100em'
+        animateTo='0em'
+        style={{
+          height: '17em',
+        }}
+      ></Card>
     </div>
   );
 }
