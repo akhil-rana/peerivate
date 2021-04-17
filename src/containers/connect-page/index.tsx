@@ -8,6 +8,7 @@ import { DuplicateIcon, LinkIcon } from '@heroicons/react/outline';
 import CopyToClipboardBox from '../../components/copyToClipboardBox';
 import { callPeer, answerPeer } from '../../services/call';
 import { v4 as uuidv4 } from 'uuid';
+import twilio from 'twilio';
 
 function ConnectPage(props: any) {
   const [qrCodeLoading, setQrCodeLoading] = useState(true);
@@ -16,11 +17,35 @@ function ConnectPage(props: any) {
   const [otherPeerID, serOtherPeerID] = useState('');
   const [peer, setPeer] = useState(
     new Peer(peerId, {
-      config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] },
+      config: {
+        iceServers: [
+          { urls: ['stun:bn-turn1.xirsys.com'] },
+          {
+            username:
+              'TE7udnq_ou3NjGz_h44idjAvSeLZbyCS8fcojzM1sxMSSEnO1IOuQuwNkrNCHZC6AAAAAGB7dCRha2hpbHJhbmE=',
+            credential: '9cd2868c-9fd7-11eb-ae2f-0242ac140004',
+            urls: [
+              'turn:bn-turn1.xirsys.com:80?transport=udp',
+              'turn:bn-turn1.xirsys.com:3478?transport=udp',
+              'turn:bn-turn1.xirsys.com:80?transport=tcp',
+              'turn:bn-turn1.xirsys.com:3478?transport=tcp',
+              'turns:bn-turn1.xirsys.com:443?transport=tcp',
+              'turns:bn-turn1.xirsys.com:5349?transport=tcp',
+            ],
+          },
+        ],
+      },
     })
   );
 
   // var pee1r = new Peer();
+
+  if (process.env.TWILIO_SID && process.env.TWILIO_TOKEN) {
+    var twilioSID = process.env.TWILIO_SID;
+    var twilioToken = process.env.TWILIO_TOKEN;
+    var client = twilio(twilioSID, twilioToken);
+    client.tokens.create().then((token) => console.log(token.username));
+  }
 
   useEffect(() => {
     // const peer = new Peer();
