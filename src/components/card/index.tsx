@@ -8,7 +8,7 @@ function Card(props: any) {
 
   return (
     <motion.div
-      className='shadow-lg rounded-2xl w-64 p-4 py-6 bg-white m-auto'
+      className='shadow-lg rounded-2xl w-64 p-4 py-6 bg-white'
       animate={{ translateX: props.animateTo }}
       initial={{ translateX: props.animateFrom }}
       transition={{ duration: 0.5, ease: props.easingFunction || 'backInOut' }}

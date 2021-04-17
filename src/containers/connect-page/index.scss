@@ -3,5 +3,8 @@ body {
 }
 
 .connectPageMain {
-    height: calc(100vh - 64px)
+    height: calc(100vh - 64px);
+    display: table-cell;
+    width: 200vh;
+    vertical-align: middle;
 }
