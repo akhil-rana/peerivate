@@ -13,17 +13,19 @@ function ConnectPage(props: any) {
   const [qrImageUrl, setQrImageUrl] = useState('');
   const [peerId] = useState(uuidv4());
   const [otherPeerID, serOtherPeerID] = useState('');
-  // const [audioStream, setAudioStream] = useState(new MediaStream());
+  const [nickName, setNickName] = useState('');
   const audioRef = useRef<HTMLAudioElement>(null);
-  
+
   const config = {
     iceServers: [
       {
-        urls: csv_to_array(process.env.REACT_APP_STUN_SERVER_URL_LIST_CSV),
+        urls: csv_to_array(
+          process.env.REACT_APP_STUN_SERVER_URL_LIST_CSV || ''
+        ),
       },
       {
-        username: process.env.REACT_APP_TURN_SERVER_USERNAME,
-        credential: process.env.REACT_APP_TURN_SERVER_PASSWORD,
+        username: process.env.REACT_APP_TURN_SERVER_USERNAME || '',
+        credential: process.env.REACT_APP_TURN_SERVER_PASSWORD || '',
         urls: [
           'turn:bn-turn1.xirsys.com:80?transport=udp',
           'turn:bn-turn1.xirsys.com:3478?transport=udp',
@@ -48,11 +50,9 @@ function ConnectPage(props: any) {
       .split('\n')
       .map((v: any) => v.split(delimiter));
   }
-  // var pee1r = new Peer();
 
   useEffect(() => {
     peer.on('open', function (id) {
-      // setPeerId(id);
       QRCode.toDataURL(peerId)
         .then((url) => {
           setQrImageUrl(url);
@@ -62,39 +62,50 @@ function ConnectPage(props: any) {
           console.error(err);
         });
     });
+
     answerPeer(peer);
+
+    async function answerPeer(peer: any) {
+      peer.on('connection', (conn: any) => {
+        conn.on('data', (data: any) => {
+          console.log(data.name);
+          peer.on('call', async (call: any) => {
+            const mediaDevices = navigator.mediaDevices as any;
+            const stream = await mediaDevices.getUserMedia({ audio: true });
+            // const stream = await mediaDevices.getDisplayMedia({ video: true }); // for screen sharing
+
+            call.answer(stream); // Answer the call with an A/V stream.
+            call.on('stream', (remoteStream: any) => {
+              // Show stream in some <video> element.
+              playRemoteAudio(remoteStream);
+            });
+          });
+        });
+      });
+    }
   }, [peer, peerId]);
 
   async function callPeer(peerId: string, peer: any) {
     const mediaDevices = navigator.mediaDevices as any;
-    // const stream = await mediaDevices.getDisplayMedia({ video: true });
+    // const stream = await mediaDevices.getDisplayMedia({ video: true });  // for screen sharing
     const stream = await mediaDevices.getUserMedia({ audio: true });
 
-    const call = peer.call(peerId, stream);
-    console.log('calling peer: ' + peerId);
-    call.on('stream', (remoteStream: any) => {
-      console.log(typeof stream);
-      // Show stream in some <video> element.
-      playTrack(remoteStream);
-    });
-  }
-
-  async function answerPeer(peer: any) {
-    peer.on('call', async (call: any) => {
-      const mediaDevices = navigator.mediaDevices as any;
-      const stream = await mediaDevices.getUserMedia({ audio: true });
-      // const stream = await mediaDevices.getDisplayMedia({ video: true });
-
-      call.answer(stream); // Answer the call with an A/V stream.
+    const conn = peer.connect(peerId);
+    conn.on('open', () => {
+      conn.send({ name: nickName || null });
+      const call = peer.call(peerId, stream);
+      console.log('calling peer: ' + peerId);
       call.on('stream', (remoteStream: any) => {
+        console.log(typeof stream);
         // Show stream in some <video> element.
-        playTrack(remoteStream);
+        playRemoteAudio(remoteStream);
       });
     });
   }
 
-  function playTrack(track: any) {
-    ((audioRef as RefObject<HTMLAudioElement>).current as HTMLAudioElement).srcObject= track;
+  function playRemoteAudio(track: any) {
+    ((audioRef as RefObject<HTMLAudioElement>)
+      .current as HTMLAudioElement).srcObject = track;
   }
 
   return (
@@ -112,7 +123,7 @@ function ConnectPage(props: any) {
               <CopyToClipboardBox
                 icon={LinkIcon}
                 text={'Copy Link'}
-                copy={process.env.REACT_APP_URL + '/join/' + peerId}
+                copy={process.env.REACT_APP_URL + '/connect/call/' + peerId}
               />
               <CopyToClipboardBox
                 style={{ marginTop: '1em' }}
@@ -140,13 +151,22 @@ function ConnectPage(props: any) {
             <div className=' relative mt-6 text-center'>
               <input
                 type='text'
-                id='name-with-label'
                 className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
                 name='meetingId'
                 onChange={(e) => {
                   serOtherPeerID(e?.target?.value);
                 }}
                 placeholder='Peer ID'
+              />
+
+              <input
+                type='text'
+                className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
+                name='nickName'
+                onChange={(e) => {
+                  setNickName(e?.target?.value);
+                }}
+                placeholder='Your name (optional)'
               />
 
               <button
@@ -169,11 +189,7 @@ function ConnectPage(props: any) {
           }}
         ></Card>
       </div>
-      <audio
-        ref={audioRef}
-        className='peerAudio'
-        autoPlay
-      />
+      <audio ref={audioRef} className='peerAudio' autoPlay />
     </div>
   );
 }
