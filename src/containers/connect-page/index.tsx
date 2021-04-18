@@ -1,12 +1,11 @@
 import './index.scss';
 import Peer from 'peerjs';
 import QRCode from 'qrcode';
-import { useEffect, useState } from 'react';
+import { RefObject, useEffect, useRef, useState } from 'react';
 import Card from '../../components/card';
 import { motion } from 'framer-motion';
 import { DuplicateIcon, LinkIcon } from '@heroicons/react/outline';
 import CopyToClipboardBox from '../../components/copyToClipboardBox';
-// import { callPeer, answerPeer } from '../../services/call';
 import { v4 as uuidv4 } from 'uuid';
 
 function ConnectPage(props: any) {
@@ -14,27 +13,32 @@ function ConnectPage(props: any) {
   const [qrImageUrl, setQrImageUrl] = useState('');
   const [peerId] = useState(uuidv4());
   const [otherPeerID, serOtherPeerID] = useState('');
-  const [peer] = useState(
-    new Peer(peerId, {
-      config: {
-        iceServers: [
-          {
-            urls: csv_to_array(process.env.REACT_APP_STUN_SERVER_URL_LIST_CSV),
-          },
-          {
-            username: process.env.REACT_APP_TURN_SERVER_USERNAME,
-            credential: process.env.REACT_APP_TURN_SERVER_PASSWORD,
-            urls: [
-              'turn:bn-turn1.xirsys.com:80?transport=udp',
-              'turn:bn-turn1.xirsys.com:3478?transport=udp',
-              'turn:bn-turn1.xirsys.com:80?transport=tcp',
-              'turn:bn-turn1.xirsys.com:3478?transport=tcp',
-              'turns:bn-turn1.xirsys.com:443?transport=tcp',
-              'turns:bn-turn1.xirsys.com:5349?transport=tcp',
-            ],
-          },
+  // const [audioStream, setAudioStream] = useState(new MediaStream());
+  const audioRef = useRef<HTMLAudioElement>(null);
+  
+  const config = {
+    iceServers: [
+      {
+        urls: csv_to_array(process.env.REACT_APP_STUN_SERVER_URL_LIST_CSV),
+      },
+      {
+        username: process.env.REACT_APP_TURN_SERVER_USERNAME,
+        credential: process.env.REACT_APP_TURN_SERVER_PASSWORD,
+        urls: [
+          'turn:bn-turn1.xirsys.com:80?transport=udp',
+          'turn:bn-turn1.xirsys.com:3478?transport=udp',
+          'turn:bn-turn1.xirsys.com:80?transport=tcp',
+          'turn:bn-turn1.xirsys.com:3478?transport=tcp',
+          'turns:bn-turn1.xirsys.com:443?transport=tcp',
+          'turns:bn-turn1.xirsys.com:5349?transport=tcp',
         ],
       },
+    ],
+  };
+
+  const [peer] = useState(
+    new Peer(peerId, {
+      config: config,
     })
   );
 
@@ -58,18 +62,40 @@ function ConnectPage(props: any) {
           console.error(err);
         });
     });
-    // answerPeer(peer);
+    answerPeer(peer);
+  }, [peer, peerId]);
 
-    peer.on('connection', (conn) => {
-      conn.on('data', (data) => {
-        // Will print 'hi!'
-        console.log(data);
-      });
-      conn.on('open', () => {
-        conn.send('hello!');
+  async function callPeer(peerId: string, peer: any) {
+    const mediaDevices = navigator.mediaDevices as any;
+    // const stream = await mediaDevices.getDisplayMedia({ video: true });
+    const stream = await mediaDevices.getUserMedia({ audio: true });
+
+    const call = peer.call(peerId, stream);
+    console.log('calling peer: ' + peerId);
+    call.on('stream', (remoteStream: any) => {
+      console.log(typeof stream);
+      // Show stream in some <video> element.
+      playTrack(remoteStream);
+    });
+  }
+
+  async function answerPeer(peer: any) {
+    peer.on('call', async (call: any) => {
+      const mediaDevices = navigator.mediaDevices as any;
+      const stream = await mediaDevices.getUserMedia({ audio: true });
+      // const stream = await mediaDevices.getDisplayMedia({ video: true });
+
+      call.answer(stream); // Answer the call with an A/V stream.
+      call.on('stream', (remoteStream: any) => {
+        // Show stream in some <video> element.
+        playTrack(remoteStream);
       });
     });
-  }, [peer, peerId]);
+  }
+
+  function playTrack(track: any) {
+    ((audioRef as RefObject<HTMLAudioElement>).current as HTMLAudioElement).srcObject= track;
+  }
 
   return (
     <div className='connectPageMain'>
@@ -126,14 +152,7 @@ function ConnectPage(props: any) {
               <button
                 type='button'
                 onClick={() => {
-                  // callPeer(otherPeerID);
-                  // const peer1 = new Peer();
-                  const conn = peer.connect(otherPeerID);
-                  console.log(conn);
-                  conn.on('open', () => {
-                    console.log('connect to ' + otherPeerID);
-                    conn.send('hi!');
-                  });
+                  callPeer(otherPeerID, peer);
                 }}
                 className='py-3 px-6 w-40 mt-10 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
               >
@@ -150,6 +169,11 @@ function ConnectPage(props: any) {
           }}
         ></Card>
       </div>
+      <audio
+        ref={audioRef}
+        className='peerAudio'
+        autoPlay
+      />
     </div>
   );
 }
