@@ -18,22 +18,7 @@ function ConnectPage(props: any) {
   const [peer, setPeer] = useState(
     new Peer(peerId, {
       config: {
-        iceServers: [
-          { urls: ['stun:bn-turn1.xirsys.com'] },
-          {
-            username:
-              'TE7udnq_ou3NjGz_h44idjAvSeLZbyCS8fcojzM1sxMSSEnO1IOuQuwNkrNCHZC6AAAAAGB7dCRha2hpbHJhbmE=',
-            credential: '9cd2868c-9fd7-11eb-ae2f-0242ac140004',
-            urls: [
-              'turn:bn-turn1.xirsys.com:80?transport=udp',
-              'turn:bn-turn1.xirsys.com:3478?transport=udp',
-              'turn:bn-turn1.xirsys.com:80?transport=tcp',
-              'turn:bn-turn1.xirsys.com:3478?transport=tcp',
-              'turns:bn-turn1.xirsys.com:443?transport=tcp',
-              'turns:bn-turn1.xirsys.com:5349?transport=tcp',
-            ],
-          },
-        ],
+        iceServers: process.env.REACT_APP_ICE_SERVERS_JSON ? JSON.parse(process.env.REACT_APP_ICE_SERVERS_JSON) : [],
       },
     })
   );
@@ -72,7 +57,7 @@ function ConnectPage(props: any) {
         conn.send('hello!');
       });
     });
-  }, [peer]);
+  }, [peer, peerId]);
 
   return (
     <div className='connectPageMain'>
