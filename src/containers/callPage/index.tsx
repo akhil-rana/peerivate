@@ -1,7 +1,8 @@
 import './index.scss';
 import { useParams } from 'react-router-dom';
-import React from 'react';
+// import { useState } from 'react';
 import RippleLoading from '../../components/rippleLoading';
+// import SnackBar from '../../components/snackBar';
 
 function CallPage(props: any) {
   const { id, type } = useParams<{ id: string; type: string }>();

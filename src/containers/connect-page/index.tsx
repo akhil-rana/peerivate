@@ -3,10 +3,12 @@ import Peer from 'peerjs';
 import QRCode from 'qrcode';
 import { RefObject, useEffect, useRef, useState } from 'react';
 import Card from '../../components/card';
+import SnackBar from '../../components/snackBar';
 import { motion } from 'framer-motion';
 import { DuplicateIcon, LinkIcon } from '@heroicons/react/outline';
 import CopyToClipboardBox from '../../components/copyToClipboardBox';
 import { v4 as uuidv4 } from 'uuid';
+import Button from '@material-ui/core/Button';
 
 function ConnectPage(props: any) {
   const [qrCodeLoading, setQrCodeLoading] = useState(true);
@@ -14,7 +16,12 @@ function ConnectPage(props: any) {
   const [peerId] = useState(uuidv4());
   const [otherPeerID, serOtherPeerID] = useState('');
   const [nickName, setNickName] = useState('');
+  const [peerName, setPeerName] = useState('');
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [snackBarState, setSnackBarState] = useState(false);
+  const [call, setCall] = useState(null);
+  const [connection, setConnection] = useState(null);
+  // const [snackBarDuration] = useState();
 
   const config = {
     iceServers: [
@@ -67,23 +74,30 @@ function ConnectPage(props: any) {
 
     async function answerPeer(peer: any) {
       peer.on('connection', (conn: any) => {
+        setConnection(conn);
         conn.on('data', (data: any) => {
-          console.log(data.name);
+          setPeerName(data.name);
           peer.on('call', async (call: any) => {
-            const mediaDevices = navigator.mediaDevices as any;
-            const stream = await mediaDevices.getUserMedia({ audio: true });
-            // const stream = await mediaDevices.getDisplayMedia({ video: true }); // for screen sharing
-
-            call.answer(stream); // Answer the call with an A/V stream.
-            call.on('stream', (remoteStream: any) => {
-              // Show stream in some <video> element.
-              playRemoteAudio(remoteStream);
-            });
+            setSnackBarState(true);
+            setCall(call);
+            // answerCall(call);
           });
         });
       });
     }
   }, [peer, peerId]);
+
+  async function answerCall(call: any) {
+    const mediaDevices = navigator.mediaDevices as any;
+    const stream = await mediaDevices.getUserMedia({ audio: true });
+    // const stream = await mediaDevices.getDisplayMedia({ video: true }); // for screen sharing
+
+    call.answer(stream); // Answer the call with an A/V stream.
+    call.on('stream', (remoteStream: any) => {
+      // Show stream in some <video> element.
+      playRemoteAudio(remoteStream);
+    });
+  }
 
   async function callPeer(peerId: string, peer: any) {
     const mediaDevices = navigator.mediaDevices as any;
@@ -166,7 +180,7 @@ function ConnectPage(props: any) {
                 onChange={(e) => {
                   setNickName(e?.target?.value);
                 }}
-                placeholder='Your name (optional)'
+                placeholder='Your name'
               />
 
               <button
@@ -190,6 +204,44 @@ function ConnectPage(props: any) {
         ></Card>
       </div>
       <audio ref={audioRef} className='peerAudio' autoPlay />
+      <SnackBar
+        open={snackBarState}
+        // duration={snackBarDuration}
+        content={
+          <div>
+            <div className='text-lg'>
+              {peerName || 'Someone'} is calling you..
+            </div>{' '}
+            <br />
+            <div className='flex'>
+              <div className='mr-10'>
+                <Button
+                  onClick={() => {
+                    setSnackBarState(false);
+                    answerCall(call);
+                  }}
+                  variant='contained'
+                  color='primary'
+                >
+                  Accept
+                </Button>
+              </div>
+              <div>
+                <Button
+                  onClick={() => {
+                    // (connection as any).close();
+                    setSnackBarState(false);
+                  }}
+                  variant='contained'
+                  color='secondary'
+                >
+                  Reject
+                </Button>
+              </div>
+            </div>
+          </div>
+        }
+      />
     </div>
   );
 }
