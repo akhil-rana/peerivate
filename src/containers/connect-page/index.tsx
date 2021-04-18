@@ -6,35 +6,47 @@ import Card from '../../components/card';
 import { motion } from 'framer-motion';
 import { DuplicateIcon, LinkIcon } from '@heroicons/react/outline';
 import CopyToClipboardBox from '../../components/copyToClipboardBox';
-import { callPeer, answerPeer } from '../../services/call';
+// import { callPeer, answerPeer } from '../../services/call';
 import { v4 as uuidv4 } from 'uuid';
-import twilio from 'twilio';
 
 function ConnectPage(props: any) {
   const [qrCodeLoading, setQrCodeLoading] = useState(true);
   const [qrImageUrl, setQrImageUrl] = useState('');
-  const [peerId, setPeerId] = useState(uuidv4());
+  const [peerId] = useState(uuidv4());
   const [otherPeerID, serOtherPeerID] = useState('');
-  const [peer, setPeer] = useState(
+  const [peer] = useState(
     new Peer(peerId, {
       config: {
-        iceServers: process.env.REACT_APP_ICE_SERVERS_JSON ? JSON.parse(process.env.REACT_APP_ICE_SERVERS_JSON) : [],
+        iceServers: [
+          {
+            urls: csv_to_array(process.env.REACT_APP_STUN_SERVER_URL_LIST_CSV),
+          },
+          {
+            username: process.env.REACT_APP_TURN_SERVER_USERNAME,
+            credential: process.env.REACT_APP_TURN_SERVER_PASSWORD,
+            urls: [
+              'turn:bn-turn1.xirsys.com:80?transport=udp',
+              'turn:bn-turn1.xirsys.com:3478?transport=udp',
+              'turn:bn-turn1.xirsys.com:80?transport=tcp',
+              'turn:bn-turn1.xirsys.com:3478?transport=tcp',
+              'turns:bn-turn1.xirsys.com:443?transport=tcp',
+              'turns:bn-turn1.xirsys.com:5349?transport=tcp',
+            ],
+          },
+        ],
       },
     })
   );
 
+  function csv_to_array(data: any, delimiter = ',', omitFirstRow = false) {
+    return data
+      .slice(omitFirstRow ? data.indexOf('\n') + 1 : 0)
+      .split('\n')
+      .map((v: any) => v.split(delimiter));
+  }
   // var pee1r = new Peer();
 
-  if (process.env.TWILIO_SID && process.env.TWILIO_TOKEN) {
-    var twilioSID = process.env.TWILIO_SID;
-    var twilioToken = process.env.TWILIO_TOKEN;
-    var client = twilio(twilioSID, twilioToken);
-    client.tokens.create().then((token) => console.log(token.username));
-  }
-
   useEffect(() => {
-    // const peer = new Peer();
-    // console.log('h')
     peer.on('open', function (id) {
       // setPeerId(id);
       QRCode.toDataURL(peerId)
