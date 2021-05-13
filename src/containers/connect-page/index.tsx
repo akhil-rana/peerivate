@@ -48,6 +48,9 @@ function ConnectPage(props: any) {
   const [peer] = useState(
     new Peer(peerId, {
       config: config,
+      secure: true,
+      ...(process.env.REACT_APP_PEERJS_SERVER_DOMAIN && {host: process.env.REACT_APP_PEERJS_SERVER_DOMAIN}),
+      port: 443,
     })
   );
 
@@ -118,8 +121,9 @@ function ConnectPage(props: any) {
   }
 
   function playRemoteAudio(track: any) {
-    ((audioRef as RefObject<HTMLAudioElement>)
-      .current as HTMLAudioElement).srcObject = track;
+    (
+      (audioRef as RefObject<HTMLAudioElement>).current as HTMLAudioElement
+    ).srcObject = track;
   }
 
   return (
