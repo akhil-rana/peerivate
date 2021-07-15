@@ -42,7 +42,7 @@ function ConnectPage(props: any) {
     new Peer(peerId, {
       config: config,
       secure: true,
-      ...(process.env.REACT_APP_PEERJS_SERVER_DOMAINs && {
+      ...(process.env.REACT_APP_PEERJS_SERVER_DOMAIN && {
         host: process.env.REACT_APP_PEERJS_SERVER_DOMAIN,
       }),
       port: 443,
