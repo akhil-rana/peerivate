@@ -20,7 +20,7 @@ function ConnectPage(props: any) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [snackBarState, setSnackBarState] = useState(false);
   const [call, setCall] = useState(null);
-  const [connection, setConnection] = useState(null);
+  const [, setConnection] = useState(null);
   // const [snackBarDuration] = useState();
 
   const config = {

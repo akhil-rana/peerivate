@@ -5,7 +5,7 @@ import RippleLoading from '../../components/rippleLoading';
 // import SnackBar from '../../components/snackBar';
 
 function CallPage(props: any) {
-  const { id, type } = useParams<{ id: string; type: string }>();
+  const { type } = useParams<{ id: string; type: string }>();
 
   return (
     <div>
