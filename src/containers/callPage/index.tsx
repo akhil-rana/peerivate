@@ -12,7 +12,7 @@ function CallPage(props: any) {
       {type === 'call' ? (
         <div className='flex align-middle justify-center h-screen'>
           <div className='m-auto text-center'>
-            <span className='font-sans font-medium text-4xl'>Calling {id}</span>
+            <span className='font-sans font-medium text-4xl'>Calling...</span>
             <div className='flex align-middle justify-center'>
               <RippleLoading />
             </div>

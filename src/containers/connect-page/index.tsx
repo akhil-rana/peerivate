@@ -33,14 +33,7 @@ function ConnectPage(props: any) {
       {
         username: process.env.REACT_APP_TURN_SERVER_USERNAME || '',
         credential: process.env.REACT_APP_TURN_SERVER_PASSWORD || '',
-        urls: [
-          'turn:bn-turn1.xirsys.com:80?transport=udp',
-          'turn:bn-turn1.xirsys.com:3478?transport=udp',
-          'turn:bn-turn1.xirsys.com:80?transport=tcp',
-          'turn:bn-turn1.xirsys.com:3478?transport=tcp',
-          'turns:bn-turn1.xirsys.com:443?transport=tcp',
-          'turns:bn-turn1.xirsys.com:5349?transport=tcp',
-        ],
+        urls: ['turn:numb.viagenie.ca'],
       },
     ],
   };
@@ -220,7 +213,7 @@ function ConnectPage(props: any) {
             </div>{' '}
             <br />
             <div className='flex'>
-              <div className='mr-10'>
+              <div className='mr-10 ml-7'>
                 <Button
                   onClick={() => {
                     setSnackBarState(false);
@@ -228,6 +221,11 @@ function ConnectPage(props: any) {
                   }}
                   variant='contained'
                   color='primary'
+                  style={{
+                    borderRadius: '20px',
+                    backgroundColor: '#2f8a30',
+                    textTransform: 'none',
+                  }}
                 >
                   Accept
                 </Button>
@@ -240,6 +238,11 @@ function ConnectPage(props: any) {
                   }}
                   variant='contained'
                   color='secondary'
+                  style={{
+                    borderRadius: '20px',
+                    backgroundColor: '#e03232',
+                    textTransform: 'none',
+                  }}
                 >
                   Reject
                 </Button>
