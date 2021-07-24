@@ -1,7 +1,7 @@
 import './index.scss';
 import Peer from 'peerjs';
 import QRCode from 'qrcode';
-import { RefObject, useEffect, useRef, useState } from 'react';
+import { RefObject, useRef, useState } from 'react';
 import Card from '../../components/card';
 import SnackBar from '../../components/snackBar';
 import { motion } from 'framer-motion';
@@ -9,9 +9,10 @@ import { DuplicateIcon, LinkIcon } from '@heroicons/react/outline';
 import CopyToClipboardBox from '../../components/copyToClipboardBox';
 import { v4 as uuidv4 } from 'uuid';
 import Button from '@material-ui/core/Button';
+// import { ControlPointSharp } from '@material-ui/icons';
 
 function ConnectPage(props: any) {
-  const [qrCodeLoading, setQrCodeLoading] = useState(true);
+  const [qrCodeLoading, setQrCodeLoading] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState('');
   const [peerId] = useState(uuidv4());
   const [otherPeerID, serOtherPeerID] = useState('');
@@ -21,8 +22,9 @@ function ConnectPage(props: any) {
   const [snackBarState, setSnackBarState] = useState(false);
   const [call, setCall] = useState(null);
   const [, setConnection] = useState(null);
+  const [inviteOn, setInviteOn] = useState(false);
   // const [snackBarDuration] = useState();
-
+  // console.log(peerId);
   const config = {
     iceServers: [
       {
@@ -38,16 +40,54 @@ function ConnectPage(props: any) {
     ],
   };
 
-  const [peer] = useState(
-    new Peer(peerId, {
-      config: config,
-      secure: true,
-      ...(process.env.REACT_APP_PEERJS_SERVER_DOMAIN && {
-        host: process.env.REACT_APP_PEERJS_SERVER_DOMAIN,
-      }),
-      port: 443,
-    })
-  );
+  // const [peer, setPeer] = useState<any>(null);
+
+  function startRTC(mode: string) {
+    return new Promise((resolve, reject) => {
+      const peer = new Peer(peerId, {
+        config: config,
+        secure: true,
+        ...(process.env.REACT_APP_PEERJS_SERVER_DOMAIN && {
+          host: process.env.REACT_APP_PEERJS_SERVER_DOMAIN,
+        }),
+        port: 443,
+      });
+      // setPeer(peer);
+      if (mode === 'invite') {
+        setQrCodeLoading(true);
+      }
+      peer.on('open', function (id: any) {
+        resolve(peer);
+        QRCode.toDataURL(peerId)
+          .then((url) => {
+            setQrImageUrl(url);
+            if (mode === 'invite') {
+              setQrCodeLoading(false);
+              setInviteOn(true);
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      });
+
+      answerPeer(peer);
+    });
+  }
+
+  async function answerPeer(peer: any) {
+    peer.on('connection', (conn: any) => {
+      setConnection(conn);
+      conn.on('data', (data: any) => {
+        setPeerName(data.name);
+        peer.on('call', async (call: any) => {
+          setSnackBarState(true);
+          setCall(call);
+          // answerCall(call);
+        });
+      });
+    });
+  }
 
   function csv_to_array(data: any, delimiter = ',', omitFirstRow = false) {
     return data
@@ -56,34 +96,7 @@ function ConnectPage(props: any) {
       .map((v: any) => v.split(delimiter));
   }
 
-  useEffect(() => {
-    peer.on('open', function (id) {
-      QRCode.toDataURL(peerId)
-        .then((url) => {
-          setQrImageUrl(url);
-          setQrCodeLoading(false);
-        })
-        .catch((err) => {
-          console.error(err);
-        });
-    });
-
-    answerPeer(peer);
-
-    async function answerPeer(peer: any) {
-      peer.on('connection', (conn: any) => {
-        setConnection(conn);
-        conn.on('data', (data: any) => {
-          setPeerName(data.name);
-          peer.on('call', async (call: any) => {
-            setSnackBarState(true);
-            setCall(call);
-            // answerCall(call);
-          });
-        });
-      });
-    }
-  }, [peer, peerId]);
+  // useEffect(() => {}, [peer, peerId]);
 
   async function answerCall(call: any) {
     const mediaDevices = navigator.mediaDevices as any;
@@ -97,7 +110,8 @@ function ConnectPage(props: any) {
     });
   }
 
-  async function callPeer(peerId: string, peer: any) {
+  async function callPeer(peerId: string) {
+    const peer: any = await startRTC('call');
     const mediaDevices = navigator.mediaDevices as any;
     // const stream = await mediaDevices.getDisplayMedia({ video: true });  // for screen sharing
     const stream = await mediaDevices.getUserMedia({ audio: true });
@@ -127,27 +141,42 @@ function ConnectPage(props: any) {
         <Card
           loading={qrCodeLoading}
           content={
-            <motion.div
-              animate={{ scale: 1 }}
-              initial={{ scale: 0.5 }}
-              transition={{ duration: 0.2 }}
-            >
-              <img alt='qr code' src={qrImageUrl}></img>
-              <CopyToClipboardBox
-                icon={LinkIcon}
-                text={'Copy Link'}
-                copy={process.env.REACT_APP_URL + '/connect/call/' + peerId}
-              />
-              <CopyToClipboardBox
-                style={{ marginTop: '1em' }}
-                icon={DuplicateIcon}
-                iconStyle={{
-                  right: '-0.38em',
-                }}
-                text={'Copy ID'}
-                copy={peerId}
-              />
-            </motion.div>
+            inviteOn ? (
+              <motion.div
+                animate={{ scale: 1 }}
+                initial={{ scale: 0.5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <img alt='qr code' src={qrImageUrl}></img>
+
+                <CopyToClipboardBox
+                  icon={LinkIcon}
+                  text={'Copy Link'}
+                  copy={process.env.REACT_APP_URL + '/connect/call/' + peerId}
+                />
+                <CopyToClipboardBox
+                  style={{ marginTop: '1em' }}
+                  icon={DuplicateIcon}
+                  iconStyle={{
+                    right: '-0.38em',
+                  }}
+                  text={'Copy ID'}
+                  copy={peerId}
+                />
+              </motion.div>
+            ) : (
+              <div>
+                <button
+                  type='button'
+                  onClick={() => {
+                    startRTC('invite');
+                  }}
+                  className='py-3 px-6 w-40 mt-20 bg-blue-600 hover:bg-green-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
+                >
+                  Start
+                </button>
+              </div>
+            )
           }
           heading='Invite others'
           animateFrom='-100em'
@@ -162,35 +191,41 @@ function ConnectPage(props: any) {
           loading={false}
           content={
             <div className=' relative mt-6 text-center'>
-              <input
-                type='text'
-                className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
-                name='meetingId'
-                onChange={(e) => {
-                  serOtherPeerID(e?.target?.value);
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  callPeer(otherPeerID);
                 }}
-                placeholder='Peer ID'
-              />
-
-              <input
-                type='text'
-                className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
-                name='nickName'
-                onChange={(e) => {
-                  setNickName(e?.target?.value);
-                }}
-                placeholder='Your name'
-              />
-
-              <button
-                type='button'
-                onClick={() => {
-                  callPeer(otherPeerID, peer);
-                }}
-                className='py-3 px-6 w-40 mt-10 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
               >
-                Call
-              </button>
+                <input
+                  type='text'
+                  className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
+                  name='meetingId'
+                  onChange={(e) => {
+                    serOtherPeerID(e?.target?.value);
+                  }}
+                  placeholder='Peer ID'
+                  required
+                />
+
+                <input
+                  type='text'
+                  className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
+                  name='nickName'
+                  onChange={(e) => {
+                    setNickName(e?.target?.value);
+                  }}
+                  placeholder='Your name'
+                  required
+                />
+
+                <button
+                  type='submit'
+                  className='py-3 px-6 w-40 mt-10 bg-green-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
+                >
+                  Call
+                </button>
+              </form>
             </div>
           }
           heading='Call a Peer'
