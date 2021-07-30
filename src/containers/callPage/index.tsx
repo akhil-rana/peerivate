@@ -7,7 +7,10 @@ import Peer from 'peerjs';
 import RippleLoading from '../../components/rippleLoading';
 import { config } from '../../common/config';
 import Card from '../../components/card';
-import { generateRandomPeerId } from '../../common/utils';
+import {
+  generateRandomPeerId,
+  kebabToCapitalizedSpacedString,
+} from '../../common/utils';
 import { useLocation } from 'react-router-dom';
 
 function CallPage(props: any) {
@@ -80,7 +83,6 @@ function CallPage(props: any) {
 
   return (
     <div>
-      (
       <div className='flex align-middle justify-center h-screen'>
         <div className='m-auto text-center'>
           {calling && !callConnectedState ? (
@@ -132,7 +134,9 @@ function CallPage(props: any) {
                     </form>
                   </div>
                 }
-                heading={`Call ${id?.split('_')[0] || 'peer'} `}
+                heading={`Call ${
+                  kebabToCapitalizedSpacedString(id?.split('_')[0]) || 'peer'
+                } `}
                 animateFrom='100em'
                 animateTo='0em'
                 style={{
@@ -146,7 +150,7 @@ function CallPage(props: any) {
             <div>
               <span className='font-sans font-medium text-4xl'>
                 Connected to{' '}
-                {id?.split('_')[0] ||
+                {kebabToCapitalizedSpacedString(id?.split('_')[0]) ||
                   props?.pickedCallDetails?.peerName ||
                   'peer'}
               </span>
@@ -157,7 +161,7 @@ function CallPage(props: any) {
           ) : null}
         </div>
       </div>
-      )
+
       <audio ref={audioRef} className='peerAudio' autoPlay />
     </div>
   );
