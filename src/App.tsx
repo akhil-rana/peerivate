@@ -1,6 +1,6 @@
 import { BrowserRouter, Route } from 'react-router-dom';
 import './App.scss';
-import Header from './components/header';
+// import Header from './components/header';
 import CallPage from './containers/callPage';
 import ConnectPage from './containers/connect-page';
 
@@ -9,7 +9,6 @@ function App() {
     <BrowserRouter>
       <div className='App'>
         <Route exact path='/'>
-          <Header></Header>
           <ConnectPage />
         </Route>
         <Route path='/connect/:type/:id'>

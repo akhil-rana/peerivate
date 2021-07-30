@@ -12,6 +12,8 @@ import Button from '@material-ui/core/Button';
 import { config } from '../../common/config';
 import { generateRandomPeerId } from '../../common/utils';
 import { useHistory } from 'react-router-dom';
+import CallPage from '../callPage';
+import Header from '../../components/header';
 
 function ConnectPage(props: any) {
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
@@ -25,7 +27,11 @@ function ConnectPage(props: any) {
   const [call, setCall] = useState(null);
   const [, setConnection] = useState(null);
   const [inviteOn, setInviteOn] = useState(false);
+  const [receivingCallConnectedState, setReceivingCallConnectedState] =
+    useState(false);
+
   const history = useHistory();
+  // const [peer, setPeer] = useState<any>(null);
 
   function startRTC(mode: string) {
     return new Promise((resolve, reject) => {
@@ -43,6 +49,7 @@ function ConnectPage(props: any) {
         setQrCodeLoading(true);
       }
       peer.on('open', function (id: any) {
+        // setPeer(peer);
         resolve(peer);
         QRCode.toDataURL(process.env.REACT_APP_URL + '/connect/call/' + peerId)
           .then((url) => {
@@ -64,6 +71,7 @@ function ConnectPage(props: any) {
   async function answerPeer(peer: any) {
     peer.on('connection', (conn: any) => {
       setConnection(conn);
+      serOtherPeerID(conn?.peer);
       conn.on('data', (data: any) => {
         setPeerName(data.name);
         peer.on('call', async (call: any) => {
@@ -86,25 +94,6 @@ function ConnectPage(props: any) {
     });
   }
 
-  // async function callPeer(peerId: string) {
-  //   const peer: any = await startRTC('call');
-  //   const mediaDevices = navigator.mediaDevices as any;
-  //   // const stream = await mediaDevices.getDisplayMedia({ video: true });  // for screen sharing
-  //   const stream = await mediaDevices.getUserMedia({ audio: true });
-
-  //   const conn = peer.connect(peerId);
-  //   conn.on('open', () => {
-  //     conn.send({ name: nickName || null });
-  //     const call = peer.call(peerId, stream);
-  //     console.log('calling peer: ' + peerId);
-  //     call.on('stream', (remoteStream: any) => {
-  //       console.log(typeof stream);
-  //       // Show stream in some <video> element.
-  //       playRemoteAudio(remoteStream);
-  //     });
-  //   });
-  // }
-
   function playRemoteAudio(track: any) {
     (
       (audioRef as RefObject<HTMLAudioElement>).current as HTMLAudioElement
@@ -112,186 +101,208 @@ function ConnectPage(props: any) {
   }
 
   return (
-    <div className='connectPageMain'>
-      <div className='cards flex flex-col m-auto sm:flex-row'>
-        <Card
-          loading={qrCodeLoading}
-          content={
-            inviteOn ? (
-              <motion.div
-                animate={{ scale: 1 }}
-                initial={{ scale: 0.5 }}
-                transition={{ duration: 0.2 }}
-              >
-                <img
-                  alt='qr code'
-                  width='148'
-                  height='148'
-                  src={qrImageUrl}
-                ></img>
-
-                <CopyToClipboardBox
-                  icon={LinkIcon}
-                  text={'Copy Link'}
-                  copy={process.env.REACT_APP_URL + '/connect/call/' + peerId}
-                />
-                <CopyToClipboardBox
-                  style={{ marginTop: '1em' }}
-                  icon={DuplicateIcon}
-                  iconStyle={{
-                    right: '-0.38em',
-                  }}
-                  text={'Copy ID'}
-                  copy={peerId}
-                />
-              </motion.div>
-            ) : (
-              <div>
-                <form
-                  onSubmit={() => {
-                    startRTC('invite');
-                  }}
-                >
-                  <input
-                    type='text'
-                    className='mt-10 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
-                    name='nickName'
-                    onChange={(e) => {
-                      setNickName(e?.target?.value);
-                    }}
-                    placeholder='Your name'
-                    required
-                    autoComplete='off'
-                  />
-                  <div className='text-center'>
-                    <button
-                      type='submit'
-                      className='py-3 px-6 w-40 mt-10 bg-blue-600 hover:bg-green-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
+    <>
+      {!receivingCallConnectedState ? (
+        <div>
+          <Header />
+          <div className='connectPageMain'>
+            <div className='cards flex flex-col m-auto sm:flex-row'>
+              <Card
+                loading={qrCodeLoading}
+                content={
+                  inviteOn ? (
+                    <motion.div
+                      animate={{ scale: 1 }}
+                      initial={{ scale: 0.5 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      Next
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )
-          }
-          heading='Invite others'
-          animateFrom='-100em'
-          animateTo='0em'
-          style={{
-            height: '20em',
-            margin: '1em auto',
-          }}
-        ></Card>
+                      <img
+                        alt='qr code'
+                        width='148'
+                        height='148'
+                        src={qrImageUrl}
+                      ></img>
 
-        <Card
-          loading={false}
-          content={
-            <div className=' relative mt-6 text-center'>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  // callPeer(otherPeerID);
-                  history.push({
-                    pathname: '/connect/call/' + otherPeerID,
-                    state: {
-                      name: nickName,
-                    },
-                  });
+                      <CopyToClipboardBox
+                        icon={LinkIcon}
+                        text={'Copy Link'}
+                        copy={
+                          process.env.REACT_APP_URL + '/connect/call/' + peerId
+                        }
+                      />
+                      <CopyToClipboardBox
+                        style={{ marginTop: '1em' }}
+                        icon={DuplicateIcon}
+                        iconStyle={{
+                          right: '-0.38em',
+                        }}
+                        text={'Copy ID'}
+                        copy={peerId}
+                      />
+                    </motion.div>
+                  ) : (
+                    <div>
+                      <form
+                        onSubmit={() => {
+                          startRTC('invite');
+                        }}
+                      >
+                        <input
+                          type='text'
+                          className='mt-10 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
+                          name='nickName'
+                          onChange={(e) => {
+                            setNickName(e?.target?.value);
+                          }}
+                          placeholder='Your name'
+                          required
+                          autoComplete='off'
+                          autoCapitalize='on'
+                          maxLength={20}
+                        />
+                        <div className='text-center'>
+                          <button
+                            type='submit'
+                            className='py-3 px-6 w-40 mt-10 bg-blue-600 hover:bg-green-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )
+                }
+                heading='Invite others'
+                animateFrom='-100em'
+                animateTo='0em'
+                style={{
+                  height: '20em',
+                  margin: '1em auto',
                 }}
-              >
-                <input
-                  type='text'
-                  className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
-                  name='meetingId'
-                  onChange={(e) => {
-                    serOtherPeerID(e?.target?.value);
-                  }}
-                  placeholder='Peer ID'
-                  autoComplete='off'
-                  required
-                />
+              ></Card>
 
-                <input
-                  type='text'
-                  className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
-                  name='nickName'
-                  onChange={(e) => {
-                    setNickName(e?.target?.value);
-                  }}
-                  placeholder='Your name'
-                  autoComplete='off'
-                  required
-                />
+              <Card
+                loading={false}
+                content={
+                  <div className=' relative mt-6 text-center'>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        // callPeer(otherPeerID);
+                        history.push({
+                          pathname: '/connect/call/' + otherPeerID,
+                          state: {
+                            name: nickName,
+                            mode: 'caller',
+                          },
+                        });
+                      }}
+                    >
+                      <input
+                        type='text'
+                        className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
+                        name='meetingId'
+                        onChange={(e) => {
+                          serOtherPeerID(e?.target?.value);
+                        }}
+                        placeholder='Peer ID'
+                        autoComplete='off'
+                        required
+                      />
 
-                <button
-                  type='submit'
-                  className='py-3 px-6 w-40 mt-10 bg-green-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
-                >
-                  Call
-                </button>
-              </form>
+                      <input
+                        type='text'
+                        className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
+                        name='nickName'
+                        onChange={(e) => {
+                          setNickName(e?.target?.value);
+                        }}
+                        placeholder='Your name'
+                        autoComplete='off'
+                        autoCapitalize='on'
+                        maxLength={20}
+                        required
+                      />
+
+                      <button
+                        type='submit'
+                        className='py-3 px-6 w-40 mt-10 bg-green-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
+                      >
+                        Call
+                      </button>
+                    </form>
+                  </div>
+                }
+                heading='Call a Peer'
+                animateFrom='100em'
+                animateTo='0em'
+                style={{
+                  height: '20em',
+                  margin: '1em auto',
+                }}
+              ></Card>
             </div>
-          }
-          heading='Call a Peer'
-          animateFrom='100em'
-          animateTo='0em'
-          style={{
-            height: '20em',
-            margin: '1em auto',
-          }}
-        ></Card>
-      </div>
-      <audio ref={audioRef} className='peerAudio' autoPlay />
-      <SnackBar
-        open={snackBarState}
-        // duration={snackBarDuration}
-        content={
-          <div>
-            <div className='text-lg'>
-              {peerName || 'Someone'} is calling you..
-            </div>{' '}
-            <br />
-            <div className='flex'>
-              <div className='mr-10 ml-7'>
-                <Button
-                  onClick={() => {
-                    setSnackBarState(false);
-                    answerCall(call);
-                  }}
-                  variant='contained'
-                  color='primary'
-                  style={{
-                    borderRadius: '20px',
-                    backgroundColor: '#2f8a30',
-                    textTransform: 'none',
-                  }}
-                >
-                  Accept
-                </Button>
-              </div>
-              <div>
-                <Button
-                  onClick={() => {
-                    // (connection as any).close();
-                    setSnackBarState(false);
-                  }}
-                  variant='contained'
-                  color='secondary'
-                  style={{
-                    borderRadius: '20px',
-                    backgroundColor: '#e03232',
-                    textTransform: 'none',
-                  }}
-                >
-                  Reject
-                </Button>
-              </div>
-            </div>
+            <SnackBar
+              open={snackBarState}
+              // duration={snackBarDuration}
+              content={
+                <div>
+                  <div className='text-lg'>
+                    {peerName || 'Someone'} is calling you..
+                  </div>{' '}
+                  <br />
+                  <div className='flex'>
+                    <div className='mr-10 ml-7'>
+                      <Button
+                        onClick={() => {
+                          setSnackBarState(false);
+                          answerCall(call);
+                          setReceivingCallConnectedState(true);
+                        }}
+                        variant='contained'
+                        color='primary'
+                        style={{
+                          borderRadius: '20px',
+                          backgroundColor: '#2f8a30',
+                          textTransform: 'none',
+                        }}
+                      >
+                        Accept
+                      </Button>
+                    </div>
+                    <div>
+                      <Button
+                        onClick={() => {
+                          // (connection as any).close();
+                          setSnackBarState(false);
+                        }}
+                        variant='contained'
+                        color='secondary'
+                        style={{
+                          borderRadius: '20px',
+                          backgroundColor: '#e03232',
+                          textTransform: 'none',
+                        }}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              }
+            />
           </div>
-        }
-      />
-    </div>
+        </div>
+      ) : (
+        <CallPage
+          pickCall={true}
+          pickedCallDetails={{
+            peerName: peerName,
+          }}
+        />
+      )}
+      <audio ref={audioRef} className='peerAudio' autoPlay />
+    </>
   );
 }
 
