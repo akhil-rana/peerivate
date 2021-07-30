@@ -7,14 +7,16 @@ import SnackBar from '../../components/snackBar';
 import { motion } from 'framer-motion';
 import { DuplicateIcon, LinkIcon } from '@heroicons/react/outline';
 import CopyToClipboardBox from '../../components/copyToClipboardBox';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 import Button from '@material-ui/core/Button';
-// import { ControlPointSharp } from '@material-ui/icons';
+import { config } from '../../common/config';
+import { generateRandomPeerId } from '../../common/utils';
+import { useHistory } from 'react-router-dom';
 
 function ConnectPage(props: any) {
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState('');
-  const [peerId] = useState(uuidv4());
+  const [peerId, setPeerId] = useState('');
   const [otherPeerID, serOtherPeerID] = useState('');
   const [nickName, setNickName] = useState('');
   const [peerName, setPeerName] = useState('');
@@ -23,34 +25,12 @@ function ConnectPage(props: any) {
   const [call, setCall] = useState(null);
   const [, setConnection] = useState(null);
   const [inviteOn, setInviteOn] = useState(false);
-  // const [snackBarDuration] = useState();
-  // console.log(peerId);
-  const config = {
-    iceServers: [
-      {
-        urls: csv_to_array(
-          process.env.REACT_APP_STUN_SERVER_URL_LIST_CSV || ''
-        ),
-      },
-      {
-        username: process.env.REACT_APP_TURN_SERVER_USERNAME || '',
-        credential: process.env.REACT_APP_TURN_SERVER_PASSWORD || '',
-        urls: [
-          'turn:bn-turn1.xirsys.com:80?transport=udp',
-          'turn:bn-turn1.xirsys.com:3478?transport=udp',
-          'turn:bn-turn1.xirsys.com:80?transport=tcp',
-          'turn:bn-turn1.xirsys.com:3478?transport=tcp',
-          'turns:bn-turn1.xirsys.com:443?transport=tcp',
-          'turns:bn-turn1.xirsys.com:5349?transport=tcp',
-        ],
-      },
-    ],
-  };
-
-  // const [peer, setPeer] = useState<any>(null);
+  const history = useHistory();
 
   function startRTC(mode: string) {
     return new Promise((resolve, reject) => {
+      const peerId = generateRandomPeerId(nickName);
+      setPeerId(peerId);
       const peer = new Peer(peerId, {
         config: config,
         secure: true,
@@ -59,13 +39,12 @@ function ConnectPage(props: any) {
         }),
         port: 443,
       });
-      // setPeer(peer);
       if (mode === 'invite') {
         setQrCodeLoading(true);
       }
       peer.on('open', function (id: any) {
         resolve(peer);
-        QRCode.toDataURL(peerId)
+        QRCode.toDataURL(process.env.REACT_APP_URL + '/connect/call/' + peerId)
           .then((url) => {
             setQrImageUrl(url);
             if (mode === 'invite') {
@@ -90,20 +69,10 @@ function ConnectPage(props: any) {
         peer.on('call', async (call: any) => {
           setSnackBarState(true);
           setCall(call);
-          // answerCall(call);
         });
       });
     });
   }
-
-  function csv_to_array(data: any, delimiter = ',', omitFirstRow = false) {
-    return data
-      .slice(omitFirstRow ? data.indexOf('\n') + 1 : 0)
-      .split('\n')
-      .map((v: any) => v.split(delimiter));
-  }
-
-  // useEffect(() => {}, [peer, peerId]);
 
   async function answerCall(call: any) {
     const mediaDevices = navigator.mediaDevices as any;
@@ -117,24 +86,24 @@ function ConnectPage(props: any) {
     });
   }
 
-  async function callPeer(peerId: string) {
-    const peer: any = await startRTC('call');
-    const mediaDevices = navigator.mediaDevices as any;
-    // const stream = await mediaDevices.getDisplayMedia({ video: true });  // for screen sharing
-    const stream = await mediaDevices.getUserMedia({ audio: true });
+  // async function callPeer(peerId: string) {
+  //   const peer: any = await startRTC('call');
+  //   const mediaDevices = navigator.mediaDevices as any;
+  //   // const stream = await mediaDevices.getDisplayMedia({ video: true });  // for screen sharing
+  //   const stream = await mediaDevices.getUserMedia({ audio: true });
 
-    const conn = peer.connect(peerId);
-    conn.on('open', () => {
-      conn.send({ name: nickName || null });
-      const call = peer.call(peerId, stream);
-      console.log('calling peer: ' + peerId);
-      call.on('stream', (remoteStream: any) => {
-        console.log(typeof stream);
-        // Show stream in some <video> element.
-        playRemoteAudio(remoteStream);
-      });
-    });
-  }
+  //   const conn = peer.connect(peerId);
+  //   conn.on('open', () => {
+  //     conn.send({ name: nickName || null });
+  //     const call = peer.call(peerId, stream);
+  //     console.log('calling peer: ' + peerId);
+  //     call.on('stream', (remoteStream: any) => {
+  //       console.log(typeof stream);
+  //       // Show stream in some <video> element.
+  //       playRemoteAudio(remoteStream);
+  //     });
+  //   });
+  // }
 
   function playRemoteAudio(track: any) {
     (
@@ -173,15 +142,31 @@ function ConnectPage(props: any) {
               </motion.div>
             ) : (
               <div>
-                <button
-                  type='button'
-                  onClick={() => {
+                <form
+                  onSubmit={() => {
                     startRTC('invite');
                   }}
-                  className='py-3 px-6 w-40 mt-20 bg-blue-600 hover:bg-green-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
                 >
-                  Start
-                </button>
+                  <input
+                    type='text'
+                    className='mt-10 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
+                    name='nickName'
+                    onChange={(e) => {
+                      setNickName(e?.target?.value);
+                    }}
+                    placeholder='Your name'
+                    required
+                    autoComplete='off'
+                  />
+                  <div className='text-center'>
+                    <button
+                      type='submit'
+                      className='py-3 px-6 w-40 mt-10 bg-blue-600 hover:bg-green-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-full'
+                    >
+                      Next
+                    </button>
+                  </div>
+                </form>
               </div>
             )
           }
@@ -201,7 +186,13 @@ function ConnectPage(props: any) {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  callPeer(otherPeerID);
+                  // callPeer(otherPeerID);
+                  history.push({
+                    pathname: '/connect/call/' + otherPeerID,
+                    state: {
+                      name: nickName,
+                    },
+                  });
                 }}
               >
                 <input
@@ -212,6 +203,7 @@ function ConnectPage(props: any) {
                     serOtherPeerID(e?.target?.value);
                   }}
                   placeholder='Peer ID'
+                  autoComplete='off'
                   required
                 />
 
@@ -223,6 +215,7 @@ function ConnectPage(props: any) {
                     setNickName(e?.target?.value);
                   }}
                   placeholder='Your name'
+                  autoComplete='off'
                   required
                 />
 
