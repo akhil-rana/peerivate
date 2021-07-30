@@ -51,7 +51,10 @@ function ConnectPage(props: any) {
       peer.on('open', function (id: any) {
         // setPeer(peer);
         resolve(peer);
-        QRCode.toDataURL(process.env.REACT_APP_URL + '/connect/call/' + peerId)
+        QRCode.toDataURL(
+          process.env.REACT_APP_URL + '/connect/call/' + peerId,
+          { width: 148 }
+        )
           .then((url) => {
             setQrImageUrl(url);
             if (mode === 'invite') {
@@ -158,7 +161,7 @@ function ConnectPage(props: any) {
                           required
                           autoComplete='off'
                           autoCapitalize='on'
-                          maxLength={20}
+                          maxLength={30}
                         />
                         <div className='text-center'>
                           <button
@@ -220,7 +223,7 @@ function ConnectPage(props: any) {
                         placeholder='Your name'
                         autoComplete='off'
                         autoCapitalize='on'
-                        maxLength={20}
+                        maxLength={30}
                         required
                       />
 

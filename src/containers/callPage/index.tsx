@@ -117,7 +117,7 @@ function CallPage(props: any) {
                           setNickName(e?.target?.value);
                         }}
                         placeholder='Your name'
-                        maxLength={20}
+                        maxLength={30}
                         autoCapitalize='on'
                         autoComplete='off'
                         required
