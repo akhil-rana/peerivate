@@ -123,7 +123,12 @@ function ConnectPage(props: any) {
                 initial={{ scale: 0.5 }}
                 transition={{ duration: 0.2 }}
               >
-                <img alt='qr code' src={qrImageUrl}></img>
+                <img
+                  alt='qr code'
+                  width='148'
+                  height='148'
+                  src={qrImageUrl}
+                ></img>
 
                 <CopyToClipboardBox
                   icon={LinkIcon}
