@@ -8,3 +8,14 @@ body {
     width: 200vh;
     vertical-align: middle;
 }
+
+.qrCode-container {
+    height: 140px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.qrCode-container img {
+    margin-top: -4px;
+}

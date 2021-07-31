@@ -1,7 +1,7 @@
 import './index.scss';
 import Peer from 'peerjs';
 import QRCode from 'qrcode';
-import { RefObject, useRef, useState } from 'react';
+import { useState } from 'react';
 import Card from '../../components/card';
 import SnackBar from '../../components/snackBar';
 import { motion } from 'framer-motion';
@@ -14,24 +14,25 @@ import { generateRandomPeerId } from '../../common/utils';
 import { useHistory } from 'react-router-dom';
 import CallPage from '../callPage';
 import Header from '../../components/header';
+// import Alert from '../../components/alert';
 
-function ConnectPage(props: any) {
+function ConnectPage() {
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState('');
   const [peerId, setPeerId] = useState('');
   const [otherPeerID, serOtherPeerID] = useState('');
   const [nickName, setNickName] = useState('');
   const [peerName, setPeerName] = useState('');
-  const audioRef = useRef<HTMLAudioElement>(null);
   const [snackBarState, setSnackBarState] = useState(false);
   const [call, setCall] = useState(null);
   const [, setConnection] = useState(null);
   const [inviteOn, setInviteOn] = useState(false);
+  const [remoteStream, setRemoteStream] = useState(null);
+
   const [receivingCallConnectedState, setReceivingCallConnectedState] =
     useState(false);
 
   const history = useHistory();
-  // const [peer, setPeer] = useState<any>(null);
 
   function startRTC(mode: string) {
     return new Promise((resolve, reject) => {
@@ -49,7 +50,6 @@ function ConnectPage(props: any) {
         setQrCodeLoading(true);
       }
       peer.on('open', function (id: any) {
-        // setPeer(peer);
         resolve(peer);
         QRCode.toDataURL(
           process.env.REACT_APP_URL + '/connect/call/' + peerId,
@@ -87,20 +87,17 @@ function ConnectPage(props: any) {
 
   async function answerCall(call: any) {
     const mediaDevices = navigator.mediaDevices as any;
-    const stream = await mediaDevices.getUserMedia({ audio: true });
+    const stream = await mediaDevices.getUserMedia({
+      audio: true,
+      video: true,
+    });
     // const stream = await mediaDevices.getDisplayMedia({ video: true }); // for screen sharing
 
     call.answer(stream); // Answer the call with an A/V stream.
     call.on('stream', (remoteStream: any) => {
       // Show stream in some <video> element.
-      playRemoteAudio(remoteStream);
+      setRemoteStream(remoteStream);
     });
-  }
-
-  function playRemoteAudio(track: any) {
-    (
-      (audioRef as RefObject<HTMLAudioElement>).current as HTMLAudioElement
-    ).srcObject = track;
   }
 
   return (
@@ -119,13 +116,14 @@ function ConnectPage(props: any) {
                       initial={{ scale: 0.5 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <img
-                        alt='qr code'
-                        width='148'
-                        height='148'
-                        src={qrImageUrl}
-                      ></img>
-
+                      <div className='qrCode-container'>
+                        <img
+                          alt='qr code'
+                          width='148'
+                          height='148'
+                          src={qrImageUrl}
+                        ></img>{' '}
+                      </div>
                       <CopyToClipboardBox
                         icon={LinkIcon}
                         text={'Copy Link'}
@@ -302,9 +300,9 @@ function ConnectPage(props: any) {
           pickedCallDetails={{
             peerName: peerName,
           }}
+          remoteStream={remoteStream}
         />
       )}
-      <audio ref={audioRef} className='peerAudio' autoPlay />
     </>
   );
 }

@@ -11,21 +11,21 @@ export function csv_to_array(
 
 export const stringToKebabCase = (str: string) =>
   str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/[\s_]+/g, '-')
-    .toLowerCase();
+    ?.replace(/([a-z])([A-Z])/g, '$1-$2')
+    ?.replace(/[\s_]+/g, '-')
+    ?.toLowerCase();
 
 export function kebabToCapitalizedSpacedString(str: string) {
   return str
-    .split('-')
-    .join(' ')
-    .replace(/^\w|\s\w/g, function (letter) {
+    ?.split('-')
+    ?.join(' ')
+    ?.replace(/^\w|\s\w/g, function (letter) {
       return letter.toUpperCase();
     });
 }
 
 export function generateRandomPeerId(prefix: string) {
   return Math.random()
-    .toString(32)
-    .replace('0.', (stringToKebabCase(prefix) || '') + '_');
+    ?.toString(32)
+    ?.replace('0.', (stringToKebabCase(prefix) || '') + '_');
 }

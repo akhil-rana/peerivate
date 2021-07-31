@@ -12,19 +12,22 @@ import {
   kebabToCapitalizedSpacedString,
 } from '../../common/utils';
 import { useLocation } from 'react-router-dom';
+import Alert from '../../components/alert';
 
 function CallPage(props: any) {
   const { id } = useParams<{ id: string; type: string }>();
   const [, setRandomPeerId] = useState('');
   const [calling, setCalling] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('error');
   const [callConnectedState, setCallConnectedState] = useState(false);
   const locationState: any = useLocation().state;
   const [nickName, setNickName] = useState(locationState?.name || '');
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  function playRemoteAudio(track: any) {
+  function playRemoteStream(track: any) {
     (
-      (audioRef as RefObject<HTMLAudioElement>).current as HTMLAudioElement
+      (videoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
     ).srcObject = track;
   }
 
@@ -50,12 +53,15 @@ function CallPage(props: any) {
   async function callPeer(peerId: string) {
     setCalling(true);
     const peer: any = await startRTC('call');
-    const mediaDevices = navigator.mediaDevices as any;
-    // const stream = await mediaDevices.getDisplayMedia({ video: true });  // for screen sharing
-    const stream = await mediaDevices.getUserMedia({ audio: true });
 
     const conn = peer.connect(peerId);
-    conn.on('open', () => {
+    conn.on('open', async () => {
+      const mediaDevices = navigator.mediaDevices as any;
+      // const stream = await mediaDevices.getDisplayMedia({ video: true });  // for screen sharing
+      const stream = await mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
       conn.send({ name: nickName || null });
       const call = peer.call(peerId, stream);
       console.log('calling peer: ' + peerId);
@@ -64,8 +70,14 @@ function CallPage(props: any) {
         // Show stream in some <video> element.
         setCallConnectedState(true);
         setCalling(false);
-        playRemoteAudio(remoteStream);
+        playRemoteStream(remoteStream);
       });
+    });
+
+    peer.on('error', function (err: string) {
+      console.log(err);
+      setErrorMessage(err.toString());
+      setShowError(true);
     });
   }
 
@@ -76,10 +88,12 @@ function CallPage(props: any) {
 
     if (props?.pickCall) {
       setCallConnectedState(true);
-      // console.log(props?.pickedCallDetails?.peerName);
+      setTimeout(() => {
+        playRemoteStream(props?.remoteStream);
+      }, 200);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [props]);
 
   return (
     <div>
@@ -88,7 +102,13 @@ function CallPage(props: any) {
           {calling && !callConnectedState ? (
             // when user directly calls so name input not required
             <div>
-              <span className='font-sans font-medium text-4xl'>Calling...</span>
+              <span className='font-sans font-medium text-4xl'>
+                Calling{' '}
+                {kebabToCapitalizedSpacedString(id?.split('_')[0]) ||
+                  props?.pickedCallDetails?.peerName ||
+                  'peer'}
+                ...
+              </span>
               <div className='flex align-middle justify-center'>
                 <RippleLoading />
               </div>
@@ -153,6 +173,7 @@ function CallPage(props: any) {
                 {kebabToCapitalizedSpacedString(id?.split('_')[0]) ||
                   props?.pickedCallDetails?.peerName ||
                   'peer'}
+                <video ref={videoRef} className='peerVideo' autoPlay />
               </span>
               <div className='flex align-middle justify-center'>
                 {/* <RippleLoading /> */}
@@ -161,8 +182,23 @@ function CallPage(props: any) {
           ) : null}
         </div>
       </div>
-
-      <audio ref={audioRef} className='peerAudio' autoPlay />
+      {showError ? (
+        <Alert
+          type={'error'}
+          addStyles={{
+            position: 'absolute',
+            top: '1em',
+            right: '0.5em',
+          }}
+          show={showError}
+          setShow={setShowError}
+          timeout={6000}
+          message={errorMessage}
+          callBack={() => {
+            window.open('/', '_self');
+          }}
+        />
+      ) : null}
     </div>
   );
 }
