@@ -1,0 +1,21 @@
+.myVideo{
+    position: absolute;
+    right: 0em;
+    bottom: 0em;
+    height: 20%;
+    cursor: all-scroll;
+    border-radius: 7px;
+    box-shadow: 0 0 5px rgba(0,0,0,.1), 2px 2px 5px rgba(0,0,0,.1);
+    // width: 5em;
+}
+.videoContainer{
+    height: 100vh;
+    position: relative;
+}
+.peerVideo{
+    border-radius: 7px;
+    height: 100%
+}
+.callPageContainerDark{
+    background-color: #181a1b;
+}

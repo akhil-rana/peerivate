@@ -28,6 +28,7 @@ function ConnectPage() {
   const [, setConnection] = useState(null);
   const [inviteOn, setInviteOn] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [myStream, setMyStream] = useState(null);
 
   const [receivingCallConnectedState, setReceivingCallConnectedState] =
     useState(false);
@@ -97,6 +98,7 @@ function ConnectPage() {
     call.on('stream', (remoteStream: any) => {
       // Show stream in some <video> element.
       setRemoteStream(remoteStream);
+      setMyStream(stream);
     });
   }
 
@@ -301,6 +303,7 @@ function ConnectPage() {
             peerName: peerName,
           }}
           remoteStream={remoteStream}
+          myStream={myStream}
         />
       )}
     </>

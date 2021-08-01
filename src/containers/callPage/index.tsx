@@ -13,6 +13,7 @@ import {
 } from '../../common/utils';
 import { useLocation } from 'react-router-dom';
 import Alert from '../../components/alert';
+import Draggable from 'react-draggable';
 
 function CallPage(props: any) {
   const { id } = useParams<{ id: string; type: string }>();
@@ -23,11 +24,18 @@ function CallPage(props: any) {
   const [callConnectedState, setCallConnectedState] = useState(false);
   const locationState: any = useLocation().state;
   const [nickName, setNickName] = useState(locationState?.name || '');
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const myVideoRef = useRef<HTMLVideoElement>(null);
+  const peerVideoRef = useRef<HTMLVideoElement>(null);
 
   function playRemoteStream(track: any) {
     (
-      (videoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
+      (peerVideoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
+    ).srcObject = track;
+  }
+
+  function playMyStream(track: any) {
+    (
+      (myVideoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
     ).srcObject = track;
   }
 
@@ -57,11 +65,19 @@ function CallPage(props: any) {
     const conn = peer.connect(peerId);
     conn.on('open', async () => {
       const mediaDevices = navigator.mediaDevices as any;
-      // const stream = await mediaDevices.getDisplayMedia({ video: true });  // for screen sharing
+
+      // for screen share / system audio
+      // const stream = await mediaDevices.getDisplayMedia({
+      //   video: true,
+      //   audio: true,
+      // });
+
+      // for camera/mic
       const stream = await mediaDevices.getUserMedia({
         audio: true,
         video: true,
       });
+
       conn.send({ name: nickName || null });
       const call = peer.call(peerId, stream);
       console.log('calling peer: ' + peerId);
@@ -71,6 +87,7 @@ function CallPage(props: any) {
         setCallConnectedState(true);
         setCalling(false);
         playRemoteStream(remoteStream);
+        playMyStream(stream);
       });
     });
 
@@ -90,13 +107,14 @@ function CallPage(props: any) {
       setCallConnectedState(true);
       setTimeout(() => {
         playRemoteStream(props?.remoteStream);
+        playMyStream(props?.myStream);
       }, 200);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props]);
 
   return (
-    <div>
+    <div className={callConnectedState ? 'callPageContainerDark' : ''}>
       <div className='flex align-middle justify-center h-screen'>
         <div className='m-auto text-center'>
           {calling && !callConnectedState ? (
@@ -169,11 +187,16 @@ function CallPage(props: any) {
             // when user picks an incoming call
             <div>
               <span className='font-sans font-medium text-4xl'>
-                Connected to{' '}
+                {/* Connected to{' '}
                 {kebabToCapitalizedSpacedString(id?.split('_')[0]) ||
                   props?.pickedCallDetails?.peerName ||
-                  'peer'}
-                <video ref={videoRef} className='peerVideo' autoPlay />
+                  'peer'} */}
+                <div className='videoContainer'>
+                  <video ref={peerVideoRef} className='peerVideo' autoPlay />
+                  <Draggable bounds={'parent'}>
+                    <video ref={myVideoRef} className='myVideo' autoPlay />
+                  </Draggable>
+                </div>
               </span>
               <div className='flex align-middle justify-center'>
                 {/* <RippleLoading /> */}
