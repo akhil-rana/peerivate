@@ -12,7 +12,7 @@ import { config } from '../../common/config';
 import {
   generateRandomPeerId,
   getDefaultCameraDeviceId,
-  toggleTrack,
+  // toggleTrack,
 } from '../../common/utils';
 import { useHistory } from 'react-router-dom';
 import CallPage from '../callPage';

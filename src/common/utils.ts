@@ -45,7 +45,11 @@ export async function getDefaultCameraDeviceId() {
   const mediaDevices = navigator.mediaDevices as any;
 
   const devices = (await mediaDevices.enumerateDevices()).filter((e: any) => {
-    return e.kind === 'videoinput';
+    return (
+      e.kind === 'videoinput' &&
+      !e.label?.includes('NVIDIA Broadcast') &&
+      !e.label?.includes('OBS')
+    );
   });
   return devices[0].deviceId;
 }
