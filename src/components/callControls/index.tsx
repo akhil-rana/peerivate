@@ -11,7 +11,9 @@ function CallControls(props: any) {
   return (
     <div className='call-controls-container'>
       <div className='call-controls-buttons-container'>
-        <Button connection={props?.connection} />
+        <Button type='mic' action={props?.micToggleAction} />
+        <Button type='camera' action={props?.cameraToggleAction} />
+        <Button type='call' action={props?.callDisconnectAction} />
       </div>
     </div>
   );

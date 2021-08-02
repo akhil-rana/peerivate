@@ -12,6 +12,7 @@ import { config } from '../../common/config';
 import {
   generateRandomPeerId,
   getDefaultCameraDeviceId,
+  toggleTrack,
 } from '../../common/utils';
 import { useHistory } from 'react-router-dom';
 import CallPage from '../callPage';
@@ -29,7 +30,7 @@ function ConnectPage() {
   const [connection, setConnection] = useState(null);
   const [inviteOn, setInviteOn] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
-  const [myStream, setMyStream] = useState(null);
+  const [myStream, setMyStream]: any = useState(null);
 
   const [receivingCallConnectedState, setReceivingCallConnectedState] =
     useState(false);
@@ -113,6 +114,7 @@ function ConnectPage() {
       },
     });
     // const stream = await mediaDevices.getDisplayMedia({ video: true }); // for screen sharing
+    // toggleTrack(stream, 'video');
 
     call.answer(stream); // Answer the call with an A/V stream.
     call.on('stream', (remoteStream: any) => {

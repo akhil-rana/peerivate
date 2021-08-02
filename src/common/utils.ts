@@ -49,3 +49,11 @@ export async function getDefaultCameraDeviceId() {
   });
   return devices[0].deviceId;
 }
+
+export function toggleTrack(stream: MediaStream, type: string) {
+  stream.getTracks().forEach((track) => {
+    if (track.kind === type) {
+      track.enabled = !track.enabled;
+    }
+  });
+}

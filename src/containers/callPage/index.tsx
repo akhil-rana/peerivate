@@ -11,6 +11,7 @@ import {
   getDefaultCameraDeviceId,
   kebabToCapitalizedSpacedString,
   playStream,
+  toggleTrack,
 } from '../../common/utils';
 import { useLocation } from 'react-router-dom';
 import Alert from '../../components/alert';
@@ -30,6 +31,7 @@ function CallPage(props: any) {
   const peerVideoRef = useRef<HTMLVideoElement>(null);
   // const [peer, setPeer]: any = useState(null);
   const [conn, setConn]: any = useState(null);
+  const [myStream, setMyStream]: any = useState(null);
 
   function startRTC() {
     const randomPeerId = generateRandomPeerId(nickName);
@@ -88,6 +90,10 @@ function CallPage(props: any) {
         },
       });
 
+      // console.log(stream.getTracks());
+      setMyStream(stream);
+      // toggleTrack(stream, 'video');
+
       conn.send({ name: nickName || null });
       const call = peer.call(peerId, stream);
       console.log('calling peer: ' + peerId);
@@ -122,6 +128,7 @@ function CallPage(props: any) {
         playStream(props?.remoteStream, peerVideoRef);
         playStream(props?.myStream, myVideoRef);
         setConn(props?.connection);
+        setMyStream(props?.myStream);
       }, 200);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -234,7 +241,15 @@ function CallPage(props: any) {
         />
       ) : null}
       {!calling && callConnectedState ? (
-        <CallControls connection={conn} />
+        <CallControls
+          callDisconnectAction={() => conn?.close()}
+          micToggleAction={() => {
+            toggleTrack(myStream, 'audio');
+          }}
+          cameraToggleAction={() => {
+            toggleTrack(myStream, 'video');
+          }}
+        />
       ) : null}
     </div>
   );
