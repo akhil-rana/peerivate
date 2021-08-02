@@ -1,0 +1,24 @@
+.call-controls-container {
+    position: absolute;
+    bottom: 2em;
+    min-height: 5em;
+    width: 100%;
+    text-align: center;
+    align-items: center;
+    display: flex;
+}
+
+.call-controls-buttons-container {
+    height: 100%;
+    width: 100%;
+    opacity: 0;
+    transform: translateY(10em);
+    transition: all .4s 4s;
+}
+
+.call-controls-container:hover .call-controls-buttons-container {
+    opacity: 1;
+    transform: translateY(0em);
+    transition: all .4s;
+}
+

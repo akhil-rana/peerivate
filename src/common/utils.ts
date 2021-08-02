@@ -1,3 +1,5 @@
+import { RefObject } from 'react';
+
 export function csv_to_array(
   data: string,
   delimiter = ',',
@@ -28,4 +30,22 @@ export function generateRandomPeerId(prefix: string) {
   return Math.random()
     ?.toString(32)
     ?.replace('0.', (stringToKebabCase(prefix) || '') + '_');
+}
+
+export function playStream(
+  track: MediaStream,
+  videoRef: RefObject<HTMLVideoElement>
+) {
+  (
+    (videoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
+  ).srcObject = track;
+}
+
+export async function getDefaultCameraDeviceId() {
+  const mediaDevices = navigator.mediaDevices as any;
+
+  const devices = (await mediaDevices.enumerateDevices()).filter((e: any) => {
+    return e.kind === 'videoinput';
+  });
+  return devices[0].deviceId;
 }

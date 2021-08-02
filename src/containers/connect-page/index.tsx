@@ -6,15 +6,16 @@ import Card from '../../components/card';
 import SnackBar from '../../components/snackBar';
 import { motion } from 'framer-motion';
 import { DuplicateIcon, LinkIcon } from '@heroicons/react/outline';
-import CopyToClipboardBox from '../../components/copyToClipboardBox';
-// import { v4 as uuidv4 } from 'uuid';
+import CopyToClipboardBox from '../../components/copyToClipboard';
 import Button from '@material-ui/core/Button';
 import { config } from '../../common/config';
-import { generateRandomPeerId } from '../../common/utils';
+import {
+  generateRandomPeerId,
+  getDefaultCameraDeviceId,
+} from '../../common/utils';
 import { useHistory } from 'react-router-dom';
 import CallPage from '../callPage';
 import Header from '../../components/header';
-// import Alert from '../../components/alert';
 
 function ConnectPage() {
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
@@ -25,7 +26,7 @@ function ConnectPage() {
   const [peerName, setPeerName] = useState('');
   const [snackBarState, setSnackBarState] = useState(false);
   const [call, setCall] = useState(null);
-  const [, setConnection] = useState(null);
+  const [connection, setConnection] = useState(null);
   const [inviteOn, setInviteOn] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
   const [myStream, setMyStream] = useState(null);
@@ -35,7 +36,7 @@ function ConnectPage() {
 
   const history = useHistory();
 
-  function startRTC(mode: string) {
+  function startRTC() {
     return new Promise((resolve, reject) => {
       const peerId = generateRandomPeerId(nickName);
       setPeerId(peerId);
@@ -47,9 +48,9 @@ function ConnectPage() {
         }),
         port: 443,
       });
-      if (mode === 'invite') {
-        setQrCodeLoading(true);
-      }
+
+      setQrCodeLoading(true);
+
       peer.on('open', function (id: any) {
         resolve(peer);
         QRCode.toDataURL(
@@ -58,10 +59,9 @@ function ConnectPage() {
         )
           .then((url) => {
             setQrImageUrl(url);
-            if (mode === 'invite') {
-              setQrCodeLoading(false);
-              setInviteOn(true);
-            }
+
+            setQrCodeLoading(false);
+            setInviteOn(true);
           })
           .catch((err) => {
             console.error(err);
@@ -83,14 +83,25 @@ function ConnectPage() {
           setCall(call);
         });
       });
+      conn.on('close', function () {
+        // console.log('close');
+        peer.disconnect();
+        window.open('/', '_self');
+      });
     });
   }
 
   async function answerCall(call: any) {
+    const defaultCameraId = await getDefaultCameraDeviceId();
+
     const mediaDevices = navigator.mediaDevices as any;
     const stream = await mediaDevices.getUserMedia({
       audio: true,
-      video: true,
+      video: {
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        deviceId: defaultCameraId,
+      },
     });
     // const stream = await mediaDevices.getDisplayMedia({ video: true }); // for screen sharing
 
@@ -147,7 +158,7 @@ function ConnectPage() {
                     <div>
                       <form
                         onSubmit={() => {
-                          startRTC('invite');
+                          startRTC();
                         }}
                       >
                         <input
@@ -304,6 +315,7 @@ function ConnectPage() {
           }}
           remoteStream={remoteStream}
           myStream={myStream}
+          connection={connection}
         />
       )}
     </>

@@ -1,19 +1,21 @@
 import './index.scss';
 import { useParams } from 'react-router-dom';
-import { useState, RefObject, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Peer from 'peerjs';
-// import { v4 as uuidv4 } from 'uuid';
 
 import RippleLoading from '../../components/rippleLoading';
 import { config } from '../../common/config';
 import Card from '../../components/card';
 import {
   generateRandomPeerId,
+  getDefaultCameraDeviceId,
   kebabToCapitalizedSpacedString,
+  playStream,
 } from '../../common/utils';
 import { useLocation } from 'react-router-dom';
 import Alert from '../../components/alert';
 import Draggable from 'react-draggable';
+import CallControls from '../../components/callControls';
 
 function CallPage(props: any) {
   const { id } = useParams<{ id: string; type: string }>();
@@ -26,20 +28,10 @@ function CallPage(props: any) {
   const [nickName, setNickName] = useState(locationState?.name || '');
   const myVideoRef = useRef<HTMLVideoElement>(null);
   const peerVideoRef = useRef<HTMLVideoElement>(null);
+  // const [peer, setPeer]: any = useState(null);
+  const [conn, setConn]: any = useState(null);
 
-  function playRemoteStream(track: any) {
-    (
-      (peerVideoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
-    ).srcObject = track;
-  }
-
-  function playMyStream(track: any) {
-    (
-      (myVideoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
-    ).srcObject = track;
-  }
-
-  function startRTC(mode: string) {
+  function startRTC() {
     const randomPeerId = generateRandomPeerId(nickName);
     setRandomPeerId(randomPeerId);
     return new Promise((resolve, reject) => {
@@ -53,6 +45,7 @@ function CallPage(props: any) {
       });
 
       peer.on('open', function (id: any) {
+        // setPeer(peer);
         resolve(peer);
       });
     });
@@ -60,10 +53,11 @@ function CallPage(props: any) {
 
   async function callPeer(peerId: string) {
     setCalling(true);
-    const peer: any = await startRTC('call');
+    const peer: any = await startRTC();
 
     const conn = peer.connect(peerId);
     conn.on('open', async () => {
+      setConn(conn);
       const mediaDevices = navigator.mediaDevices as any;
 
       // for screen share / system audio
@@ -73,22 +67,30 @@ function CallPage(props: any) {
       // });
 
       // for camera/mic
+      const defaultCameraId = await getDefaultCameraDeviceId();
       const stream = await mediaDevices.getUserMedia({
         audio: true,
-        video: true,
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          deviceId: defaultCameraId,
+        },
       });
 
       conn.send({ name: nickName || null });
       const call = peer.call(peerId, stream);
       console.log('calling peer: ' + peerId);
       call.on('stream', (remoteStream: any) => {
-        // console.log(typeof stream);
-        // Show stream in some <video> element.
         setCallConnectedState(true);
         setCalling(false);
-        playRemoteStream(remoteStream);
-        playMyStream(stream);
+        playStream(remoteStream, peerVideoRef);
+        playStream(stream, myVideoRef);
       });
+    });
+    conn.on('close', function () {
+      // console.log('close');
+      peer.disconnect();
+      window.open('/', '_self');
     });
 
     peer.on('error', function (err: string) {
@@ -106,8 +108,9 @@ function CallPage(props: any) {
     if (props?.pickCall) {
       setCallConnectedState(true);
       setTimeout(() => {
-        playRemoteStream(props?.remoteStream);
-        playMyStream(props?.myStream);
+        playStream(props?.remoteStream, peerVideoRef);
+        playStream(props?.myStream, myVideoRef);
+        setConn(props?.connection);
       }, 200);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -186,7 +189,7 @@ function CallPage(props: any) {
           ) : !calling && callConnectedState ? (
             // when user picks an incoming call
             <div>
-              <span className='font-sans font-medium text-4xl'>
+              <div className='font-sans font-medium text-4xl'>
                 {/* Connected to{' '}
                 {kebabToCapitalizedSpacedString(id?.split('_')[0]) ||
                   props?.pickedCallDetails?.peerName ||
@@ -197,9 +200,6 @@ function CallPage(props: any) {
                     <video ref={myVideoRef} className='myVideo' autoPlay />
                   </Draggable>
                 </div>
-              </span>
-              <div className='flex align-middle justify-center'>
-                {/* <RippleLoading /> */}
               </div>
             </div>
           ) : null}
@@ -221,6 +221,9 @@ function CallPage(props: any) {
             window.open('/', '_self');
           }}
         />
+      ) : null}
+      {!calling && callConnectedState ? (
+        <CallControls connection={conn} />
       ) : null}
     </div>
   );
