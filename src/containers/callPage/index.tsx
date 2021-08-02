@@ -58,6 +58,15 @@ function CallPage(props: any) {
     const conn = peer.connect(peerId);
     conn.on('open', async () => {
       setConn(conn);
+
+      let isMobile = false;
+      if (
+        /Android|webOS|iPhone|iPad|Mac|Macintosh|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        )
+      ) {
+        isMobile = true;
+      }
       const mediaDevices = navigator.mediaDevices as any;
 
       // for screen share / system audio
@@ -73,7 +82,9 @@ function CallPage(props: any) {
         video: {
           width: { ideal: 1920 },
           height: { ideal: 1080 },
-          deviceId: defaultCameraId,
+          ...(!isMobile && {
+            deviceId: defaultCameraId,
+          }),
         },
       });
 

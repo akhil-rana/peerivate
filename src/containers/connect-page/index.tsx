@@ -93,14 +93,23 @@ function ConnectPage() {
 
   async function answerCall(call: any) {
     const defaultCameraId = await getDefaultCameraDeviceId();
-
+    let isMobile = false;
+    if (
+      /Android|webOS|iPhone|iPad|Mac|Macintosh|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      )
+    ) {
+      isMobile = true;
+    }
     const mediaDevices = navigator.mediaDevices as any;
     const stream = await mediaDevices.getUserMedia({
       audio: true,
       video: {
         width: { ideal: 1920 },
         height: { ideal: 1080 },
-        deviceId: defaultCameraId,
+        ...(!isMobile && {
+          deviceId: defaultCameraId,
+        }),
       },
     });
     // const stream = await mediaDevices.getDisplayMedia({ video: true }); // for screen sharing
