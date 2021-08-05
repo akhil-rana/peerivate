@@ -299,10 +299,7 @@ function CallPage(props: any) {
                     autoPlay
                   />
                   <div className='draggableVideoBox'>
-                    <Draggable
-                      bounds={'.videoContainer'}
-                      handle={'.anticon-drag'}
-                    >
+                    <Draggable bounds={'.videoContainer'}>
                       <div className='myVideoContainer'>
                         <video
                           muted={isRemoteStreamOnFullScreen}
