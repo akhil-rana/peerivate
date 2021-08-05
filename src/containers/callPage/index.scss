@@ -1,11 +1,17 @@
 .myVideo {
+    height: 100%;
+    overflow: hidden;
+    border-radius: 7px;
+    transition: 0.3s;
+}
+
+.myVideoContainer {
     position: absolute;
     right: 0.2em;
     top: 0.2em;
-    height: 20%;
-    cursor: all-scroll;
+    height: 22%;
     border-radius: 7px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, .5), 2px 2px 5px rgba(0, 0, 0, .5);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, .5), 2px 2px 5px rgba(0, 0, 0, .5);
 }
 
 .videoContainer {
@@ -20,4 +26,28 @@
 
 .callPageContainerDark {
     background-color: #181a1b;
+}
+
+.draggableVideoBox:hover .myVideo {
+    transform: scale(1.04);
+}
+
+.anticon-drag {
+    opacity: 0;
+    transition: 0.5s ease;
+    font-size: 0.7em,
+}
+
+.draggableVideoBox:hover .anticon-drag,
+.draggableVideoBox:hover .fullScreenIcon {
+    opacity: 1;
+}
+
+.fullScreenIcon {
+    position: absolute;
+    right: 5px;
+    bottom: 4px;
+    color: white;
+    cursor: pointer;
+    opacity: 0;
 }

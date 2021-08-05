@@ -11,12 +11,13 @@ import {
   getDefaultCameraDeviceId,
   kebabToCapitalizedSpacedString,
   playStream,
-  toggleTrack,
 } from '../../common/utils';
 import { useLocation } from 'react-router-dom';
 import Alert from '../../components/alert';
 import Draggable from 'react-draggable';
 import CallControls from '../../components/callControls';
+import { DragOutlined } from '@ant-design/icons';
+import FullscreenRoundedIcon from '@material-ui/icons/FullscreenRounded';
 
 function CallPage(props: any) {
   const { id } = useParams<{ id: string; type: string }>();
@@ -29,9 +30,15 @@ function CallPage(props: any) {
   const [nickName, setNickName] = useState(locationState?.name || '');
   const myVideoRef = useRef<HTMLVideoElement>(null);
   const peerVideoRef = useRef<HTMLVideoElement>(null);
+  const [call, setCall]: any = useState(null);
   // const [peer, setPeer]: any = useState(null);
   const [conn, setConn]: any = useState(null);
   const [myStream, setMyStream]: any = useState(null);
+  const [remoteStream, setRemoteStream]: any = useState(null);
+  const [myVideoTrackState, setMyVideoTrackState] = useState(true);
+  const [myAudioTrackState, setMyAudioTrackState] = useState(true);
+  const [isRemoteStreamOnFullScreen, setIsRemoteStreamOnFullScreen] =
+    useState(true);
 
   function startRTC() {
     const randomPeerId = generateRandomPeerId(nickName);
@@ -51,6 +58,74 @@ function CallPage(props: any) {
         resolve(peer);
       });
     });
+  }
+
+  function switchStreams() {
+    let tempMyStream = myStream;
+    let tempRemoteStream = remoteStream;
+    setMyStream(tempRemoteStream);
+    setRemoteStream(tempMyStream);
+    playStream(tempMyStream, peerVideoRef);
+    playStream(tempRemoteStream, myVideoRef);
+    setIsRemoteStreamOnFullScreen(!isRemoteStreamOnFullScreen);
+  }
+
+  async function startNewVideoStream() {
+    let isMobile = false;
+    if (
+      /Android|webOS|iPhone|iPad|Mac|Macintosh|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      )
+    ) {
+      isMobile = true;
+    }
+    const mediaDevices = navigator.mediaDevices as any;
+
+    const defaultCameraId = await getDefaultCameraDeviceId();
+    const stream = await mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        ...(!isMobile && {
+          deviceId: defaultCameraId,
+        }),
+      },
+    });
+    call.peerConnection
+      .getSenders()[1]
+      .replaceTrack(stream.getVideoTracks()[0]);
+    myStream.addTrack(stream.getVideoTracks()[0]);
+    setMyStream(myStream);
+    playStream(stream, myVideoRef);
+    setMyVideoTrackState(true);
+  }
+
+  async function startNewAudioStream() {
+    const mediaDevices = navigator.mediaDevices as any;
+
+    const stream = await mediaDevices.getUserMedia({
+      audio: true,
+    });
+
+    call.peerConnection
+      .getSenders()[0]
+      .replaceTrack(stream.getAudioTracks()[0]);
+    myStream.addTrack(stream.getAudioTracks()[0]);
+    setMyAudioTrackState(true);
+  }
+
+  async function stopMyTrack(type: string) {
+    myStream.getTracks().forEach((track: any) => {
+      if (track.kind === type) {
+        track.enabled = false;
+        setTimeout(() => {
+          track.stop();
+        }, 200);
+      }
+    });
+
+    if (type === 'video') setMyVideoTrackState(false);
+    if (type === 'audio') setMyAudioTrackState(false);
   }
 
   async function callPeer(peerId: string) {
@@ -96,10 +171,12 @@ function CallPage(props: any) {
 
       conn.send({ name: nickName || null });
       const call = peer.call(peerId, stream);
+      setCall(call);
       console.log('calling peer: ' + peerId);
       call.on('stream', (remoteStream: any) => {
         setCallConnectedState(true);
         setCalling(false);
+        setRemoteStream(remoteStream);
         playStream(remoteStream, peerVideoRef);
         playStream(stream, myVideoRef);
       });
@@ -129,6 +206,8 @@ function CallPage(props: any) {
         playStream(props?.myStream, myVideoRef);
         setConn(props?.connection);
         setMyStream(props?.myStream);
+        setCall(props?.call);
+        setRemoteStream(props?.remoteStream);
       }, 200);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,10 +292,47 @@ function CallPage(props: any) {
                   props?.pickedCallDetails?.peerName ||
                   'peer'} */}
                 <div className='videoContainer'>
-                  <video ref={peerVideoRef} className='peerVideo' autoPlay />
-                  <Draggable bounds={'parent'}>
-                    <video ref={myVideoRef} className='myVideo' autoPlay />
-                  </Draggable>
+                  <video
+                    muted={!isRemoteStreamOnFullScreen}
+                    ref={peerVideoRef}
+                    className='peerVideo'
+                    autoPlay
+                  />
+                  <div className='draggableVideoBox'>
+                    <Draggable
+                      bounds={'.videoContainer'}
+                      handle={'.anticon-drag'}
+                    >
+                      <div className='myVideoContainer'>
+                        <video
+                          muted={isRemoteStreamOnFullScreen}
+                          ref={myVideoRef}
+                          className='myVideo'
+                          autoPlay
+                        />
+                        <DragOutlined
+                          style={{
+                            position: 'absolute',
+                            top: '5px',
+                            left: '5px',
+                            color: 'white',
+
+                            cursor: 'all-scroll',
+                          }}
+                        />
+                        <FullscreenRoundedIcon
+                          onClick={() => {
+                            switchStreams();
+                          }}
+                          className='fullScreenIcon'
+                          style={{
+                            fontSize: '0.8em',
+                            transition: '0.5s ease',
+                          }}
+                        />
+                      </div>
+                    </Draggable>
+                  </div>
                 </div>
               </div>
             </div>
@@ -244,10 +360,12 @@ function CallPage(props: any) {
         <CallControls
           callDisconnectAction={() => conn?.close()}
           micToggleAction={() => {
-            toggleTrack(myStream, 'audio');
+            if (myAudioTrackState) stopMyTrack('audio');
+            else startNewAudioStream();
           }}
           cameraToggleAction={() => {
-            toggleTrack(myStream, 'video');
+            if (myVideoTrackState) stopMyTrack('video');
+            else startNewVideoStream();
           }}
         />
       ) : null}

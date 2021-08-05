@@ -26,11 +26,11 @@ function ConnectPage() {
   const [nickName, setNickName] = useState('');
   const [peerName, setPeerName] = useState('');
   const [snackBarState, setSnackBarState] = useState(false);
-  const [call, setCall] = useState(null);
   const [connection, setConnection] = useState(null);
   const [inviteOn, setInviteOn] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
   const [myStream, setMyStream]: any = useState(null);
+  const [call, setCall]: any = useState(null);
 
   const [receivingCallConnectedState, setReceivingCallConnectedState] =
     useState(false);
@@ -327,6 +327,7 @@ function ConnectPage() {
           remoteStream={remoteStream}
           myStream={myStream}
           connection={connection}
+          call={call}
         />
       )}
     </>
