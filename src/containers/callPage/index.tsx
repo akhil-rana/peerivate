@@ -1,6 +1,6 @@
 import './index.scss';
 import { useParams } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, RefObject } from 'react';
 import Peer from 'peerjs';
 
 import RippleLoading from '../../components/rippleLoading';
@@ -61,12 +61,26 @@ function CallPage(props: any) {
   }
 
   function switchStreams() {
-    let tempMyStream = myStream;
-    let tempRemoteStream = remoteStream;
-    setMyStream(tempRemoteStream);
-    setRemoteStream(tempMyStream);
-    playStream(tempMyStream, peerVideoRef);
-    playStream(tempRemoteStream, myVideoRef);
+    const temp = (
+      (myVideoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
+    ).srcObject;
+
+    (
+      (myVideoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
+    ).srcObject = (
+      (peerVideoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
+    ).srcObject;
+
+    (
+      (peerVideoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
+    ).srcObject = temp;
+
+    // let tempMyStream = myStream;
+    // let tempRemoteStream = remoteStream;
+    // setMyStream(tempRemoteStream);
+    // setRemoteStream(tempMyStream);
+    // playStream(tempMyStream, peerVideoRef);
+    // playStream(tempRemoteStream, myVideoRef);
     setIsRemoteStreamOnFullScreen(!isRemoteStreamOnFullScreen);
   }
 
@@ -111,6 +125,7 @@ function CallPage(props: any) {
       .getSenders()[0]
       .replaceTrack(stream.getAudioTracks()[0]);
     myStream.addTrack(stream.getAudioTracks()[0]);
+    setMyStream(myStream);
     setMyAudioTrackState(true);
   }
 
