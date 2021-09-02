@@ -1,7 +1,8 @@
 import './index.scss';
-import Peer from 'peerjs';
+import Peer from 'simple-peer';
 import QRCode from 'qrcode';
-import { useState } from 'react';
+import { io } from 'socket.io-client';
+import { useState, useEffect } from 'react';
 import Card from '../../components/card';
 import SnackBar from '../../components/snackBar';
 import { motion } from 'framer-motion';
@@ -10,9 +11,8 @@ import CopyToClipboardBox from '../../components/copyToClipboard';
 import Button from '@material-ui/core/Button';
 import { config } from '../../common/config';
 import {
-  generateRandomPeerId,
   getDefaultCameraDeviceId,
-  // toggleTrack,
+  stringToKebabCase,
 } from '../../common/utils';
 import { useHistory } from 'react-router-dom';
 import CallPage from '../callPage';
@@ -22,77 +22,80 @@ function ConnectPage() {
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
   const [qrImageUrl, setQrImageUrl] = useState('');
   const [peerId, setPeerId] = useState('');
-  const [otherPeerID, serOtherPeerID] = useState('');
+  const [otherPeerID, setOtherPeerID] = useState('');
   const [nickName, setNickName] = useState('');
+  const [socketId, setSocketId] = useState('');
   const [peerName, setPeerName] = useState('');
   const [snackBarState, setSnackBarState] = useState(false);
-  const [connection, setConnection] = useState(null);
   const [inviteOn, setInviteOn] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
   const [myStream, setMyStream]: any = useState(null);
-  const [call, setCall]: any = useState(null);
+  const [callerSocketId, setCallerSocketId] = useState('');
+  const [callerPeerSignal, setCallerPeerSignal]: any = useState();
+  const [myPeerSignal, setMyPeerSignal]: any = useState();
+  const [myPeer, setMyPeer]: any = useState();
 
   const [receivingCallConnectedState, setReceivingCallConnectedState] =
     useState(false);
 
   const history = useHistory();
+  const [socket, setSocket]: any = useState(null);
+
+  useEffect(() => {
+    socket?.on('yourID', (id: string) => {
+      setSocketId(id);
+      setPeerId(stringToKebabCase(nickName) + '_' + id);
+    });
+
+    socket?.on('hey', (data: any) => {
+      console.log('hey called', data);
+      setCallerSocketId(data.from);
+      setCallerPeerSignal(data.signal);
+      setPeerName(data.name);
+      setSnackBarState(true);
+    });
+  }, [socket, nickName]);
 
   function startRTC() {
     return new Promise((resolve, reject) => {
-      const peerId = generateRandomPeerId(nickName);
-      setPeerId(peerId);
-      const peer = new Peer(peerId, {
+      const socket = io(process.env.REACT_APP_PEERIVATE_SERVER_DOMAIN!);
+      setSocket(socket);
+      const peer = new Peer({
+        initiator: false,
         config: config,
-        secure: true,
-        ...(process.env.REACT_APP_PEERJS_SERVER_DOMAIN && {
-          host: process.env.REACT_APP_PEERJS_SERVER_DOMAIN,
-        }),
-        port: 443,
+        trickle: false,
       });
-
+      setMyPeer(peer);
       setQrCodeLoading(true);
 
-      peer.on('open', function (id: any) {
-        resolve(peer);
-        QRCode.toDataURL(
-          process.env.REACT_APP_URL + '/connect/call/' + peerId,
-          { width: 148 }
-        )
-          .then((url) => {
-            setQrImageUrl(url);
-
-            setQrCodeLoading(false);
-            setInviteOn(true);
-          })
-          .catch((err) => {
-            console.error(err);
-          });
-      });
-
-      answerPeer(peer);
-    });
-  }
-
-  async function answerPeer(peer: any) {
-    peer.on('connection', (conn: any) => {
-      setConnection(conn);
-      serOtherPeerID(conn?.peer);
-      conn.on('data', (data: any) => {
-        setPeerName(data.name);
-        peer.on('call', async (call: any) => {
-          setSnackBarState(true);
-          setCall(call);
+      QRCode.toDataURL(process.env.REACT_APP_URL + '/connect/call/' + peerId, {
+        width: 148,
+      })
+        .then((url) => {
+          setQrImageUrl(url);
+          setQrCodeLoading(false);
+          setInviteOn(true);
+        })
+        .catch((err) => {
+          console.error(err);
         });
+
+      peer.on('stream', (stream: any) => {
+        console.log('onstream');
+        setRemoteStream(stream);
       });
-      conn.on('close', function () {
-        // console.log('close');
-        peer.disconnect();
-        window.open('/', '_self');
-      });
+
+      resolve(peer);
     });
   }
 
-  async function answerCall(call: any) {
+  async function answerCall() {
+    myPeer.on('signal', (data: any) => {
+      console.log('onsignal');
+      socket.emit('acceptCall', { signal: data, to: callerSocketId });
+    });
+    myPeer.signal(callerPeerSignal);
+
     const defaultCameraId = await getDefaultCameraDeviceId();
     let isMobile = false;
     if (
@@ -103,7 +106,7 @@ function ConnectPage() {
       isMobile = true;
     }
     const mediaDevices = navigator.mediaDevices as any;
-    const stream = await mediaDevices.getUserMedia({
+    const myStream = await mediaDevices.getUserMedia({
       audio: true,
       video: {
         width: { ideal: 1920 },
@@ -113,15 +116,10 @@ function ConnectPage() {
         }),
       },
     });
-    // const stream = await mediaDevices.getDisplayMedia({ video: true }); // for screen sharing
-    // toggleTrack(stream, 'video');
-
-    call.answer(stream); // Answer the call with an A/V stream.
-    call.on('stream', (remoteStream: any) => {
-      // Show stream in some <video> element.
-      setRemoteStream(remoteStream);
-      setMyStream(stream);
-    });
+    // setMyStream(myStream);
+    setTimeout(() => {
+      myPeer.addStream(myStream);
+    }, 4000);
   }
 
   return (
@@ -168,7 +166,8 @@ function ConnectPage() {
                   ) : (
                     <div>
                       <form
-                        onSubmit={() => {
+                        onSubmit={(e) => {
+                          e.preventDefault();
                           startRTC();
                         }}
                       >
@@ -228,7 +227,7 @@ function ConnectPage() {
                         className='mt-5 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent'
                         name='meetingId'
                         onChange={(e) => {
-                          serOtherPeerID(e?.target?.value);
+                          setOtherPeerID(e?.target?.value);
                         }}
                         placeholder='Peer ID'
                         autoComplete='off'
@@ -281,7 +280,7 @@ function ConnectPage() {
                       <Button
                         onClick={() => {
                           setSnackBarState(false);
-                          answerCall(call);
+                          answerCall();
                           setReceivingCallConnectedState(true);
                         }}
                         variant='contained'
@@ -326,8 +325,6 @@ function ConnectPage() {
           }}
           remoteStream={remoteStream}
           myStream={myStream}
-          connection={connection}
-          call={call}
         />
       )}
     </>

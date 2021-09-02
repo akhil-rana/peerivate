@@ -1,16 +1,15 @@
 import './index.scss';
 import { useParams } from 'react-router-dom';
 import { useState, useRef, useEffect, RefObject } from 'react';
-import Peer from 'peerjs';
-
+import Peer from 'simple-peer';
 import RippleLoading from '../../components/rippleLoading';
 import { config } from '../../common/config';
 import Card from '../../components/card';
 import {
-  generateRandomPeerId,
   getDefaultCameraDeviceId,
   kebabToCapitalizedSpacedString,
   playStream,
+  stringToKebabCase,
 } from '../../common/utils';
 import { useLocation } from 'react-router-dom';
 import Alert from '../../components/alert';
@@ -18,10 +17,11 @@ import Draggable from 'react-draggable';
 import CallControls from '../../components/callControls';
 import { DragOutlined } from '@ant-design/icons';
 import FullscreenRoundedIcon from '@material-ui/icons/FullscreenRounded';
+import { io } from 'socket.io-client';
 
 function CallPage(props: any) {
-  const { id } = useParams<{ id: string; type: string }>();
-  const [, setRandomPeerId] = useState('');
+  const peerSlug = useParams<{ id: string; type: string }>()?.id;
+  const id = peerSlug?.split('_')[1];
   const [calling, setCalling] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('error');
@@ -31,34 +31,19 @@ function CallPage(props: any) {
   const myVideoRef = useRef<HTMLVideoElement>(null);
   const peerVideoRef = useRef<HTMLVideoElement>(null);
   const [call, setCall]: any = useState(null);
-  // const [peer, setPeer]: any = useState(null);
   const [conn, setConn]: any = useState(null);
   const [myStream, setMyStream]: any = useState(null);
-  const [remoteStream, setRemoteStream]: any = useState(null);
+  const [, setRemoteStream]: any = useState(null);
   const [myVideoTrackState, setMyVideoTrackState] = useState(true);
   const [myAudioTrackState, setMyAudioTrackState] = useState(true);
   const [isRemoteStreamOnFullScreen, setIsRemoteStreamOnFullScreen] =
     useState(true);
-
-  function startRTC() {
-    const randomPeerId = generateRandomPeerId(nickName);
-    setRandomPeerId(randomPeerId);
-    return new Promise((resolve, reject) => {
-      const peer = new Peer(randomPeerId, {
-        config: config,
-        secure: true,
-        ...(process.env.REACT_APP_PEERJS_SERVER_DOMAIN && {
-          host: process.env.REACT_APP_PEERJS_SERVER_DOMAIN,
-        }),
-        port: 443,
-      });
-
-      peer.on('open', function (id: any) {
-        // setPeer(peer);
-        resolve(peer);
-      });
-    });
-  }
+  const [socket, setSocket]: any = useState(null);
+  const [socketId, setSocketId] = useState('');
+  const [peerId, setPeerId] = useState('');
+  const [callerSocketId, setCallerSocketId] = useState('');
+  const [callerPeer, setCallerPeer] = useState();
+  const [myPeer, setMyPeer]: any = useState();
 
   function switchStreams() {
     const temp = (
@@ -75,12 +60,6 @@ function CallPage(props: any) {
       (peerVideoRef as RefObject<HTMLVideoElement>).current as HTMLVideoElement
     ).srcObject = temp;
 
-    // let tempMyStream = myStream;
-    // let tempRemoteStream = remoteStream;
-    // setMyStream(tempRemoteStream);
-    // setRemoteStream(tempMyStream);
-    // playStream(tempMyStream, peerVideoRef);
-    // playStream(tempRemoteStream, myVideoRef);
     setIsRemoteStreamOnFullScreen(!isRemoteStreamOnFullScreen);
   }
 
@@ -144,76 +123,93 @@ function CallPage(props: any) {
   }
 
   async function callPeer(peerId: string) {
-    setCalling(true);
-    const peer: any = await startRTC();
-
-    const conn = peer.connect(peerId);
-    conn.on('open', async () => {
-      setConn(conn);
-
-      let isMobile = false;
-      if (
-        /Android|webOS|iPhone|iPad|Mac|Macintosh|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent
-        )
-      ) {
-        isMobile = true;
-      }
-      const mediaDevices = navigator.mediaDevices as any;
-
-      // for screen share / system audio
-      // const stream = await mediaDevices.getDisplayMedia({
-      //   video: true,
-      //   audio: true,
-      // });
-
-      // for camera/mic
-      const defaultCameraId = await getDefaultCameraDeviceId();
-      const stream = await mediaDevices.getUserMedia({
-        audio: true,
-        video: {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          ...(!isMobile && {
-            deviceId: defaultCameraId,
-          }),
-        },
+    return new Promise(async (resolve, reject) => {
+      const socket = io(process.env.REACT_APP_PEERIVATE_SERVER_DOMAIN!);
+      setSocket(socket);
+      let socketId: string = '';
+      socket?.on('yourID', (id: string) => {
+        socketId = id;
+        setSocketId(id);
+        setPeerId(stringToKebabCase(nickName) + '_' + id);
+      });
+      const peer = new Peer({
+        initiator: true,
+        config: config,
+        trickle: false,
+      });
+      setMyPeer(peer);
+      setCalling(true);
+      let callConnected = false;
+      peer.on('signal', (data: any) => {
+        if (!callConnected) {
+          callConnected = true;
+          console.log('calling peer: ' + peerId);
+          socket.emit('callUser', {
+            userToCall: peerId,
+            signalData: data,
+            from: socketId,
+            name: nickName,
+          });
+        } else {
+          // peer.signal(data);
+        }
       });
 
-      // console.log(stream.getTracks());
-      setMyStream(stream);
-      // toggleTrack(stream, 'video');
+      peer.on('stream', (stream: any) => {
+        console.log('onstream');
+      });
 
-      conn.send({ name: nickName || null });
-      const call = peer.call(peerId, stream);
-      setCall(call);
-      console.log('calling peer: ' + peerId);
-      call.on('stream', (remoteStream: any) => {
+      socket.on('callAccepted', (signal) => {
+        console.log('callAccepted');
         setCallConnectedState(true);
         setCalling(false);
-        setRemoteStream(remoteStream);
-        playStream(remoteStream, peerVideoRef);
-        playStream(stream, myVideoRef);
+        peer.signal(signal);
       });
-    });
-    conn.on('close', function () {
-      // console.log('close');
-      peer.disconnect();
-      window.open('/', '_self');
+
+      // let isMobile = false;
+      // if (
+      //   /Android|webOS|iPhone|iPad|Mac|Macintosh|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      //     navigator.userAgent
+      //   )
+      // ) {
+      //   isMobile = true;
+      // }
+      // const mediaDevices = navigator.mediaDevices as any;
+
+      // // for camera/mic
+      // const defaultCameraId = await getDefaultCameraDeviceId();
+      // const myStream = await mediaDevices.getUserMedia({
+      //   audio: true,
+      //   video: {
+      //     width: { ideal: 1920 },
+      //     height: { ideal: 1080 },
+      //     ...(!isMobile && {
+      //       deviceId: defaultCameraId,
+      //     }),
+      //   },
+      // });
+
+      // setMyStream(myStream);
+      // peer.addStream(myStream);
+
+      // peer.on('stream', (stream) => {
+      //   console.log('onstream');
+      //   setRemoteStream(stream);
+      //   playStream(stream, peerVideoRef);
+      //   playStream(myStream, myVideoRef);
+      // });
+
+      resolve(peer);
     });
 
-    peer.on('error', function (err: string) {
-      console.log(err);
-      setErrorMessage(err.toString());
-      setShowError(true);
-    });
+    // peer.on('error', function (err: string) {
+    //   console.log(err);
+    //   setErrorMessage(err.toString());
+    //   setShowError(true);
+    // });
   }
 
   useEffect(() => {
-    if (locationState?.name) {
-      callPeer(id);
-    }
-
     if (props?.pickCall) {
       setCallConnectedState(true);
       setTimeout(() => {
@@ -237,7 +233,7 @@ function CallPage(props: any) {
             <div>
               <span className='font-sans font-medium text-4xl'>
                 Calling{' '}
-                {kebabToCapitalizedSpacedString(id?.split('_')[0]) ||
+                {kebabToCapitalizedSpacedString(peerSlug?.split('_')[0]) ||
                   props?.pickedCallDetails?.peerName ||
                   'peer'}
                 ...
@@ -288,7 +284,8 @@ function CallPage(props: any) {
                   </div>
                 }
                 heading={`Call ${
-                  kebabToCapitalizedSpacedString(id?.split('_')[0]) || 'peer'
+                  kebabToCapitalizedSpacedString(peerSlug?.split('_')[0]) ||
+                  'peer'
                 } `}
                 animateFrom='100em'
                 animateTo='0em'
