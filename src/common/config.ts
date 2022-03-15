@@ -3,6 +3,21 @@ import { csv_to_array } from './utils';
 export const config = {
   iceServers: [
     {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443?transport=tcp",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    },
+    {
       urls: csv_to_array(process.env.REACT_APP_STUN_SERVER_URL_LIST_CSV || ''),
     },
     {
