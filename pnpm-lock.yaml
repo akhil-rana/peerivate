@@ -36,7 +36,7 @@ dependencies:
     specifier: ^16.18.25
     version: 16.18.38
   '@types/react':
-    specifier: ^17.0.52
+    specifier: ^17.0.62
     version: 17.0.62
   '@types/react-dom':
     specifier: ^17.0.18
@@ -72,7 +72,7 @@ dependencies:
     specifier: ^4.0.3
     version: 4.0.3(eslint@7.30.0)(node-sass@6.0.1)(react@17.0.2)(typescript@4.9.5)
   typescript:
-    specifier: ^4.8.4
+    specifier: ^4.9.5
     version: 4.9.5
   web-vitals:
     specifier: ^2.1.4
@@ -9535,7 +9535,7 @@ packages:
       levn: 0.3.0
       prelude-ls: 1.1.2
       type-check: 0.3.2
-      word-wrap: 1.2.3
+      word-wrap: 1.2.4
     dev: false
 
   /optionator@0.9.1:
@@ -9547,7 +9547,7 @@ packages:
       levn: 0.4.1
       prelude-ls: 1.2.1
       type-check: 0.4.0
-      word-wrap: 1.2.3
+      word-wrap: 1.2.4
     dev: false
 
   /original@1.0.2:
@@ -13946,8 +13946,8 @@ packages:
       string-width: 1.0.2
     dev: false
 
-  /word-wrap@1.2.3:
-    resolution: {integrity: sha512-Hz/mrNwitNRh/HUAtM/VT/5VH+ygD6DV7mYKZAtHOrbs8U7lvPS6xf7EJKMF0uW1KJCl0H701g3ZGus+muE5vQ==}
+  /word-wrap@1.2.4:
+    resolution: {integrity: sha512-2V81OA4ugVo5pRo46hAoD2ivUJx8jXmWXfUkY4KFNw0hEptvN0QfH3K4nHiwzGeKl5rFKedV48QVoqYavy4YpA==}
     engines: {node: '>=0.10.0'}
     dev: false
 
