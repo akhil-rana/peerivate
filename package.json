@@ -16,7 +16,7 @@
     "@types/node": "^16.18.25",
     "@types/react": "^17.0.62",
     "@types/react-dom": "^17.0.18",
-    "antd": "^4.24.9",
+    "antd": "^4.24.13",
     "framer-motion": "^4.1.17",
     "node-sass": "^6.0.1",
     "peerjs": "^1.4.7",
