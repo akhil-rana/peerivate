@@ -14,7 +14,7 @@
     "@testing-library/user-event": "^13.2.0",
     "@types/jest": "^26.0.24",
     "@types/node": "^16.18.61",
-    "@types/react": "^17.0.62",
+    "@types/react": "^17.0.74",
     "@types/react-dom": "^17.0.23",
     "antd": "^4.24.13",
     "framer-motion": "^4.1.17",
